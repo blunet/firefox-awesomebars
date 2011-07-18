@@ -57,7 +57,7 @@ var UrlAddonBar = {
 }
         ]]></>).toString();
         var doc = win.document;
-        win.uabcss = doc.insertBefore(doc.createProcessingInstruction("xml-stylesheet", "href=\"data:text/css;base64," + win.btoa(uabcsstext) + "\" type=\"text/css\""), doc.getElementById("main-window"));
+        doc.insertBefore(doc.createProcessingInstruction("xml-stylesheet", "title=\"url-addon-bar-512\" href=\"data:text/css;base64," + win.btoa(uabcsstext) + "\" type=\"text/css\""), doc.getElementById("main-window"));
         var closeButton = doc.getElementById("addonbar-closebutton");
         var urlbarIcons = doc.getElementById("urlbar-icons");
         var addonBar = doc.getElementById("addon-bar");
@@ -87,8 +87,16 @@ var UrlAddonBar = {
     },
     uninit: function (win) {
         var doc = win.document;
-        if (win.uabcss)
-            doc.removeChild(win.uabcss);
+        var sheets = doc.styleSheets;
+        var len = sheets.length;
+        while (--len) {
+            if (sheets[len].title == "url-addon-bar-512") {
+                var cssuab = sheets[len].ownerNode;
+                if (cssuab)
+                    doc.removeChild(cssuab);
+                break;
+            }
+        }
         var closeButton = doc.getElementById("addonbar-closebutton");
         closeButton.removeAttribute("onclick");
         var addonBar = doc.getElementById("addon-bar");
