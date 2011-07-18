@@ -74,7 +74,7 @@ var UrlAddonBar = {
             } else {
                 var urlbarIcons = doc.getElementById("urlbar-icons");
                 urlbarIcons.insertBefore(addonBar, urlbarIcons.firstChild);
-                addonBar.getAttribute("data-inub") == "true";
+                addonBar.setAttribute("data-inub", "true");
                 addonBar.removeAttribute("toolboxid");
                 addonBar.removeAttribute("context");
             }
