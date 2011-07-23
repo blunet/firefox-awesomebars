@@ -23,7 +23,7 @@ var UrlAddonBar = {
     height: 18px !important;
     min-height: 18px !important;
     border-style: none !important;
-    background-color: transparent !important;
+    background: transparent !important;
 }
 
 #urlbar-icons > #addon-bar toolbarbutton,
@@ -34,6 +34,17 @@ var UrlAddonBar = {
     min-height: 18px !important;
     padding: 0 1.5px !important;
     margin: 0 0.5px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+#urlbar-icons > #addon-bar toolbarbutton:not([disabled="true"]):hover,
+#urlbar-icons > #addon-bar toolbarbutton:not([disabled="true"])[open="true"],
+#urlbar-icons > #addon-bar > #status-bar statusbarpanel:not([disabled="true"]):hover,
+#urlbar-icons > #addon-bar > #status-bar statusbarpanel:not([disabled="true"])[open="true"] {
+    background-image: -moz-linear-gradient(rgba(242, 245, 249, 0.95), rgba(220, 223, 225, 0.67) 49%, rgba(198, 204, 208, 0.65) 51%, rgba(194, 197, 201, 0.3)) !important;
+}
+#urlbar-icons > #addon-bar > #addonbar-closebutton:hover {
+    background: transparent !important;
 }
 
 #urlbar-icons > #addon-bar > #status-bar statusbarpanel:first-child {
@@ -53,6 +64,7 @@ var UrlAddonBar = {
 #urlbar-icons > #addon-bar toolbarspring {
     display: none !important;
 }
+
         ]]></>).toString();
         var doc = win.document;
         doc.insertBefore(doc.createProcessingInstruction("xml-stylesheet", "title=\"url-addon-bar-512\" href=\"data:text/css;base64," + win.btoa(uabcsstext) + "\" type=\"text/css\""), doc.getElementById("main-window"));
