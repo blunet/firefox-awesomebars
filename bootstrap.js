@@ -12,10 +12,6 @@ var UrlAddonBar = {
         var uabcsstext = (<><![CDATA[
 @namespace url(http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul);
 
-#urlbar-icons > #addon-bar {
-    -moz-appearance: none !important;
-}
-
 #urlbar-icons > #addon-bar > .toolbarbutton-1 > .toolbarbutton-menubutton-dropmarker,
 #urlbar-icons > #addon-bar > .toolbarbutton-1 > .toolbarbutton-menu-dropmarker,
 #urlbar-icons #mproxy-toolbar-button > .toolbarbutton-menu-dropmarker {
@@ -23,9 +19,11 @@ var UrlAddonBar = {
 }
 
 #urlbar-icons > #addon-bar {
+    -moz-appearance: none !important;
     height: 18px !important;
     min-height: 18px !important;
     border-style: none !important;
+    background-color: transparent !important;
 }
 
 #urlbar-icons > #addon-bar toolbarbutton,
