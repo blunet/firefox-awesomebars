@@ -61,7 +61,9 @@ var UrlAddonBar = {
     margin: 0 0.5px !important;
 }
 
-#urlbar-icons > #addon-bar toolbarspring {
+#urlbar-icons > #addon-bar toolbarspring,
+#urlbar-icons > #addon-bar toolbarspacer,
+#urlbar-icons > #addon-bar toolbarseparator {
     display: none !important;
 }
 
@@ -72,10 +74,22 @@ var UrlAddonBar = {
         var urlbarIcons = doc.getElementById("urlbar-icons");
         var addonBar = doc.getElementById("addon-bar");
         closeButton.toggleUA = function (e) {
-            if (e.button != 1) return;
             var doc = e.target.ownerDocument;
             var addonBar = doc.getElementById("addon-bar");
-            if (addonBar.getAttribute("data-inub") == "true") {
+            var dataInub = addonBar.getAttribute("data-inub");
+            switch (e.type) {
+                case "click" :
+                    if (e.button != 1) return;
+                    break;
+                case "aftercustomization" :
+                    doc.defaultView.removeEventListener(e.type, arguments.callee, false);
+                    break;
+                case "beforecustomization" :
+                    if (dataInub != "true") return;
+                    doc.defaultView.addEventListener("aftercustomization", arguments.callee, false);
+                    break;
+            }
+            if (dataInub == "true") {
                 var browserBottombox = doc.getElementById("browser-bottombox");
                 browserBottombox.appendChild(addonBar);
                 addonBar.setAttribute("data-inub", "false");
@@ -94,6 +108,7 @@ var UrlAddonBar = {
         addonBar.setAttribute("data-inub", "true");
         addonBar.removeAttribute("toolboxid");
         addonBar.removeAttribute("context");
+        win.addEventListener("beforecustomization", closeButton.toggleUA, true);
     },
     uninit: function (win) {
         var doc = win.document;
@@ -107,8 +122,6 @@ var UrlAddonBar = {
                 break;
             }
         }
-        var closeButton = doc.getElementById("addonbar-closebutton");
-        closeButton.removeAttribute("onclick");
         var addonBar = doc.getElementById("addon-bar");
         if (addonBar.getAttribute("data-inub")) {
             var browserBottombox = doc.getElementById("browser-bottombox");
@@ -117,6 +130,10 @@ var UrlAddonBar = {
             addonBar.setAttribute("toolboxid", "navigator-toolbox");
             addonBar.setAttribute("context", "toolbar-context-menu");
         }
+        var closeButton = doc.getElementById("addonbar-closebutton");
+        win.removeEventListener("beforecustomization", closeButton.toggleUA, true);
+        closeButton.removeAttribute("onclick");
+        delete closeButton.toggleUA;
     },
 
     aListener: {
