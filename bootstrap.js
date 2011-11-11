@@ -38,7 +38,7 @@ var UrlAddonBar = {
 #urlbar-icons > #addon-bar statusbarpanel {
     border-style: none !important;
     min-width: 18px !important;
-    min-height: 18px !important;
+    max-height: 22px !important;
     padding: 0 3px !important;
     margin: 0 !important;
     background: transparent !important;
