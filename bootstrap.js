@@ -1,178 +1,134 @@
+"use strict"
+
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-//Cu.import("resource://gre/modules/PopupNotifications.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
 var UrlAddonBar = {
-    //cs: Services.console,  // nsIConsoleService
-    //ww: Services.ww,       // nsIWindowWatcher
-    wm: Services.wm,       // nsIWindowMediator
+    _windowtype: "navigator:browser",
 
-    init: function (win) {
-        var uabcsstext = (<><![CDATA[
-@namespace url(http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul);
-
-#urlbar-icons > #addon-bar > .toolbarbutton-1 > .toolbarbutton-menubutton-dropmarker,
-#urlbar-icons > #addon-bar > .toolbarbutton-1 > .toolbarbutton-menu-dropmarker,
-#urlbar-icons #mproxy-toolbar-button > .toolbarbutton-menu-dropmarker {
-    display: none !important;
-}
-
-#urlbar-icons > * {
-    padding: 0 3px !important;
-}
-
-#urlbar-icons > #addon-bar,
-#urlbar-icons > #addon-bar > #status-bar {
-    -moz-appearance: none !important;
-    height: 18px !important;
-    min-height: 18px !important;
-    border-style: none !important;
-    background: transparent !important;
-    -moz-box-align: center !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-#urlbar-icons > #addon-bar toolbarbutton,
-#urlbar-icons > #addon-bar statusbarpanel {
-    border-style: none !important;
-    min-width: 18px !important;
-    max-height: 22px !important;
-    padding: 0 3px !important;
-    margin: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-}
-#urlbar-icons > #addon-bar toolbarbutton:not([disabled="true"]):hover,
-#urlbar-icons > #addon-bar toolbarbutton:not([disabled="true"])[open="true"],
-#urlbar-icons > #addon-bar > #status-bar statusbarpanel:not([disabled="true"]):hover,
-#urlbar-icons > #addon-bar > #status-bar statusbarpanel:not([disabled="true"])[open="true"] {
-    background-image: -moz-linear-gradient(rgba(242, 245, 249, 0.95), rgba(220, 223, 225, 0.67) 49%, rgba(198, 204, 208, 0.65) 51%, rgba(194, 197, 201, 0.3)) !important;
-}
-#urlbar-icons > #addon-bar > #addonbar-closebutton:hover {
-    background: transparent !important;
-}
-
-#urlbar-icons > #addon-bar #addonbar-closebutton,
-#urlbar-icons > #addon-bar toolbarspring,
-#urlbar-icons > #addon-bar toolbarspacer,
-#urlbar-icons > #addon-bar toolbarseparator {
-    display: none !important;
-}
-
-        ]]></>).toString();
-        var doc = win.document;
-        doc.insertBefore(doc.createProcessingInstruction("xml-stylesheet", "title=\"url-addon-bar-512\" href=\"data:text/css;base64," + win.btoa(uabcsstext) + "\" type=\"text/css\""), doc.getElementById("main-window"));
-        var closeButton = doc.getElementById("addonbar-closebutton");
-        var urlbarIcons = doc.getElementById("urlbar-icons");
-        var addonBar = doc.getElementById("addon-bar");
-        closeButton.toggleUA = function (e) {
-            var doc = e.target.ownerDocument;
-            var addonBar = doc.getElementById("addon-bar");
-            var dataInub = addonBar.getAttribute("data-inub");
-            switch (e.type) {
-                case "click" :
-                    if (e.button != 1) return;
-                    break;
-                case "aftercustomization" :
-                    doc.defaultView.removeEventListener(e.type, arguments.callee, false);
-                    break;
-                case "beforecustomization" :
-                    if (dataInub != "true") return;
-                    doc.defaultView.addEventListener("aftercustomization", arguments.callee, false);
-                    break;
-            }
-            if (dataInub == "true") {
-                var browserBottombox = doc.getElementById("browser-bottombox");
-                browserBottombox.appendChild(addonBar);
-                addonBar.setAttribute("data-inub", "false");
-                addonBar.setAttribute("toolboxid", "navigator-toolbox");
-                addonBar.setAttribute("context", "toolbar-context-menu");
-            } else {
-                var urlbarIcons = doc.getElementById("urlbar-icons");
-                urlbarIcons.insertBefore(addonBar, urlbarIcons.firstChild);
-                addonBar.setAttribute("data-inub", "true");
-                addonBar.removeAttribute("toolboxid");
-                addonBar.removeAttribute("context");
-            }
-        };
-        closeButton.setAttribute("onclick", "this.toggleUA(event);");
-        urlbarIcons.insertBefore(addonBar, urlbarIcons.firstChild);
-        addonBar.setAttribute("data-inub", "true");
-        addonBar.removeAttribute("toolboxid");
-        addonBar.removeAttribute("context");
-        win.addEventListener("beforecustomization", closeButton.toggleUA, true);
-    },
-    uninit: function (win) {
-        var doc = win.document;
-        var sheets = doc.styleSheets;
-        var len = sheets.length;
-        while (--len) {
-            if (sheets[len].title == "url-addon-bar-512") {
-                var cssuab = sheets[len].ownerNode;
-                if (cssuab)
-                    doc.removeChild(cssuab);
-                break;
-            }
-        }
-        var addonBar = doc.getElementById("addon-bar");
-        if (addonBar.getAttribute("data-inub")) {
-            var browserBottombox = doc.getElementById("browser-bottombox");
-            browserBottombox.appendChild(addonBar);
-            addonBar.removeAttribute("data-inub");
-            addonBar.setAttribute("toolboxid", "navigator-toolbox");
-            addonBar.setAttribute("context", "toolbar-context-menu");
-        }
-        var closeButton = doc.getElementById("addonbar-closebutton");
-        win.removeEventListener("beforecustomization", closeButton.toggleUA, true);
-        closeButton.removeAttribute("onclick");
-        delete closeButton.toggleUA;
-    },
-
-    aListener: {
-        onOpenWindow: function (aWindow) {
-            var win = aWindow.docShell.QueryInterface(Ci
-                .nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
-            win.addEventListener("load", function () {
-                win.removeEventListener("load", arguments.callee, true);
-                if (win.document.documentElement.getAttribute("windowtype") !=
-                    "navigator:browser") return;
-                UrlAddonBar.init(win);
-            }, true);
-        },
-        onCloseWindow: function (aWindow) {},
-        onWindowTitleChange: function (aWindow, aTitle) {},
-    },
-
-    startup: function () {
-        this.wm.addListener(this.aListener);
-        var cw = this.wm.getEnumerator("navigator:browser");
+    get _windows() {
+        let wins = [];
+        this._windowtype || (this._windowtype = "navigator:browser");
+        let cw = Services.wm.getEnumerator(this._windowtype);
         while (cw.hasMoreElements()) {
-            var win = cw.getNext().QueryInterface(Ci.nsIDOMWindow);
-            this.init(win);
+            let win = cw.getNext();
+            win.QueryInterface(Ci.nsIDOMWindow);
+            wins.push(win);
         }
+        return wins;
     },
-    shutdown: function () {
-        this.wm.removeListener(this.aListener);
-        var cw = this.wm.getEnumerator("navigator:browser");
-        while (cw.hasMoreElements()) {
-            var win = cw.getNext().QueryInterface(Ci.nsIDOMWindow);
-            this.uninit(win);
+
+    handleEvent: function (e) {
+        let doc = e.target;
+        let win = doc.defaultView;
+        win.removeEventListener("load", this, true);
+        if (doc.documentElement.getAttribute("windowtype") !=
+            this._windowtype) return;
+        this.loadScript(win);
+    },
+
+    loadStyle: function () {
+        let sss = Cc["@mozilla.org/content/style-sheet-service;1"]
+                     .getService(Ci.nsIStyleSheetService);
+        let uri = Services.io.newURI("resource://urladdonbar/skin/overlay.css",
+                                     null, null);
+        sss.sheetRegistered(uri, sss.USER_SHEET)
+            || sss.loadAndRegisterSheet(uri, sss.USER_SHEET);
+    },
+    unloadStyle: function () {
+        let sss = Cc["@mozilla.org/content/style-sheet-service;1"]
+                     .getService(Ci.nsIStyleSheetService);
+        let uri = Services.io.newURI("resource://urladdonbar/skin/overlay.css",
+                                     null, null);
+        sss.sheetRegistered(uri, sss.USER_SHEET)
+            && sss.unregisterSheet(uri, sss.USER_SHEET);
+    },
+    
+    loadScript: function (win) {
+        Services.scriptloader.loadSubScript(
+            "resource://urladdonbar/content/overlay.js",
+            win,
+            "UTF-8"
+        );
+        "UrlAddonBar" in win && typeof win.UrlAddonBar.init === "function"
+            && win.UrlAddonBar.init();
+    },
+    unloadScript: function (win) {
+        "UrlAddonBar" in win && typeof win.UrlAddonBar.uninit === "function" 
+            && win.UrlAddonBar.uninit();
+        delete win.UrlAddonBar;
+    },
+
+    onOpenWindow: function (aWindow) {
+        let win = aWindow.docShell.QueryInterface(Ci
+            .nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
+        win.addEventListener("load", this, true);
+    },
+    onCloseWindow: function (aWindow) {},
+    onWindowTitleChange: function (aWindow, aTitle) {},
+
+    init: function () {
+        this.loadStyle();
+        this._wm = Services.wm;
+        this._wm.addListener(this);
+        this._windows.forEach(function (win) {
+            this.loadScript(win);
+        }, this);
+    },
+    uninit: function () {
+        this.unloadStyle();
+        if (this._wm) this._wm.removeListener(this);
+        delete this._wm;
+        this._windows.forEach(function (win) {
+            this.unloadScript(win);
+        }, this);
+    },
+
+}
+
+let ResourceAlias = {
+    register: function (alias, data) {
+        let ios = Services.io;
+        if (!alias) return false;
+        this._alias = alias;
+        if (this._resProtocolHandler) return false;
+        this._resProtocolHandler = ios.getProtocolHandler("resource");
+        this._resProtocolHandler.QueryInterface(Ci.nsIResProtocolHandler);
+        let uri = data.resourceURI;
+        if (!uri) { // packed
+            if (data.installPath.isDirectory()) {
+                uri = ios.newFileURI(data.installPath);
+            } else { // unpacked
+                let jarProtocolHandler = ios.getProtocolHandler("jar");
+                jarProtocolHandler.QueryInterface(Ci.nsIJARProtocolHandler);
+                let spec = "jar:" + ios.newFileURI(data.installPath);
+                uri = jarProtocolHandler.newURI(spec, null, null);
+            }
         }
+        this._resProtocolHandler.setSubstitution(alias, uri);
+        return true;
+    },
+    unregister: function () {
+        if (!this._resProtocolHandler) return false;
+        this._resProtocolHandler.setSubstitution(this._alias, null);
+        delete this._resProtocolHandler;
+        delete this._alias;
+        return true;
     }
 }
 
-
 // 启用
 function startup(data, reason) {
-    var cs = Services.console;
-    UrlAddonBar.startup();
+    const alias = "urladdonbar";
+    ResourceAlias.register(alias, data);
+    UrlAddonBar.init();
 }
 
 // 禁用或应用程序退出
 function shutdown(data, reason) {
-    UrlAddonBar.shutdown();
+    ResourceAlias.unregister();
+    UrlAddonBar.uninit();
 }
 
 // 安装
