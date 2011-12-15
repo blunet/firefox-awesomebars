@@ -2,9 +2,10 @@
 
 @-moz-document url("chrome://browser/content/browser.xul") {
 
-#urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-dropmarker,
-#urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-menu-dropmarker {
-    display: none !important;
+#urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-dropmarker {
+    border-style: none !important;
+    box-shadow: none !important;
+    padding: 0 0 0 1px !important;
 }
 
 #urlbar-icons > * {
@@ -24,6 +25,11 @@
     box-shadow: none !important;
 }
 
+#urlbar-icons > #addon-bar > toolbaritem {
+    -moz-box-align: center !important;
+    -moz-box-pack: center !important;
+}
+
 #urlbar-icons > #addon-bar .toolbarbutton-1,
 #urlbar-icons > #addon-bar statusbarpanel,
 #urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-button {
@@ -34,6 +40,8 @@
     margin: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
+    -moz-box-align: center !important;
+    -moz-box-pack: center !important;
 }
 
 #urlbar-icons > #addon-bar > .toolbarbutton-1,
