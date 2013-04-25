@@ -70,6 +70,7 @@ var UrlAddonBar = {
 
     init: function () {
         this.loadStyle();
+        this.loadDefaultPreferences();
         this._wm = Services.wm;
         this._wm.addListener(this);
         this._windows.forEach(function (win) {
@@ -84,6 +85,32 @@ var UrlAddonBar = {
             this.unloadScript(win);
         }, this);
     },
+
+    loadDefaultPreferences: function () {
+        var _ = {
+            method: function (type) {
+                return ({
+                    "string": "setCharPref",
+                    "number": "setIntPref",
+                    "boolean": "setBoolPref"
+                }[type]);
+            },
+            pref: function (name, value) {
+                try {
+                    let branch = Services.prefs.getDefaultBranch(null);
+                    branch[this.method(typeof value)](name, value);
+                } catch (ex) {
+                    dump(ex);
+                }
+            }
+        };
+        const PREF = "resource://urladdonbar/defaults/preferences/options.js";
+        try {
+            Services.scriptloader.loadSubScript(PREF, _, "UTF-8");
+        } catch (ex) {
+            dump(ex);
+        }
+    }
 
 }
 
