@@ -51,7 +51,7 @@ this.UrlAddonBar = {
                        "iconsize": navbox && navbox.getAttribute("iconsize") || "small",
                     "toolbarname": "Addon-bar",
                    "customizable": true,
-                     "defaultset": let (navbar = document.getElementById("nav-bar")) navbar && navbar.getAttribute("defaultset") || "" /* or call: CustomizableUI.registerArea(ID, {}); */,
+                     "defaultset": "webrtc-status-button,bookmarks-menu-button,downloads-button,home-button,social-share-button,social-toolbar-item" /* or call: CustomizableUI.registerArea(ID, {}); */,
                         "context": "toolbar-context-menu",
             "customizationtarget": TID,
         })) {
@@ -70,7 +70,7 @@ this.UrlAddonBar = {
 
         hbox.addEventListener("areaNodeUnregistered", function _(evt) {
             hbox.removeEventListener("areaNodeUnregistered", _);
-            listener.onAreaNodeUnregistered(...evt.detail);
+            listener.onAreaNodeUnregistered.apply(listener, evt.detail);
         });
         var listener = Object.create(null);
         listener.onCustomizeStart = function (aWindow) {
