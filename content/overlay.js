@@ -1,22 +1,94 @@
 "use strict";
 
-var UrlAddonBar = {
+let CustomizableUI = window.CustomizableUI || (function () {
+    try {
+        return Components.utils.import("resource:///modules/CustomizableUI.jsm", {}).CustomizableUI;
+    } catch (ex) {
+        return;
+    };
+})();
+
+this.UrlAddonBar = {
+    ID: "uab-addon-bar",
     AUTOHIDE: "url-addon-bar-auto-hide",
     AUTOHIDEFOCUS: "url-addon-bar-auto-hide-focus",
     init: function () {
         if (this._loaded) return;
         this._loaded = true;
-        let (addonBar = document.getElementById("addon-bar")) {
-            if (!addonBar) return;
-            this._addonBar = addonBar;
-            if (addonBar.getAttribute("customizing") === "true") {
-                window.addEventListener("aftercustomization", this, false);
-            } else {
-                this.toggle() && window.addEventListener("beforecustomization", this, true);
+
+        /* For australis */
+        if (CustomizableUI) {
+            this._addonBar = this.createCustomizableToolbar();
+        } else {
+            let (addonBar = document.getElementById("addon-bar")) {
+                if (!addonBar) return;
+                this._addonBar = addonBar;
+                if (addonBar.getAttribute("customizing") === "true") {
+                    window.addEventListener("aftercustomization", this, false);
+                } else {
+                    this.toggle() && window.addEventListener("beforecustomization", this, true);
+                }
             }
-            Services.prefs.getBoolPref("extensions.urladdonbar.autohide") && this.autoHide(0);
-            Services.prefs.addObserver("extensions.urladdonbar.", this, false);
         }
+
+        Services.prefs.getBoolPref("extensions.urladdonbar.autohide") && this.autoHide(0);
+        Services.prefs.addObserver("extensions.urladdonbar.", this, false);
+    },
+    createCustomizableToolbar: function () {
+        const ID = this.ID, TID = ID + "-customization-target";
+
+        var hbox = document.createElement("hbox");
+        hbox.id = TID;
+        hbox.classList.add("addon-bar");
+        var urlbarIcons = document.getElementById("urlbar-icons");
+        urlbarIcons.insertBefore(hbox, urlbarIcons.firstChild);
+
+        var toolbar = document.createElement("toolbar");
+        var navbox = document.getElementById("navigator-toolbox");
+        toolbar.id = ID;
+        for (let [key, value] of Iterator({
+                           "mode": navbox && navbox.getAttribute("mode") || "icons",
+                       "iconsize": navbox && navbox.getAttribute("iconsize") || "small",
+                    "toolbarname": "Addon-bar",
+                   "customizable": true,
+                     "defaultset": let (navbar = document.getElementById("nav-bar")) navbar && navbar.getAttribute("defaultset") || "" /* or call: CustomizableUI.registerArea(ID, {}); */,
+                        "context": "toolbar-context-menu",
+            "customizationtarget": TID,
+        })) {
+            toolbar.setAttribute(key, value);
+        }
+        toolbar.classList.add("toolbar-primary");
+        toolbar.classList.add("chromeclass-toolbar");
+        toolbar.addEventListener("toolbarvisibilitychange", function (evt) {
+            const HIDING_ATTR = "collapsed";
+            var visible = evt.detail.visible;
+            hbox.setAttribute(HIDING_ATTR, !visible);
+        });
+
+        var navbar = document.getElementById("nav-bar");
+        navbar.parentNode.insertBefore(toolbar, navbar.nextSibling);
+
+        hbox.addEventListener("areaNodeUnregistered", function _(evt) {
+            hbox.removeEventListener("areaNodeUnregistered", _);
+            listener.onAreaNodeUnregistered(...evt.detail);
+        });
+        var listener = Object.create(null);
+        listener.onCustomizeStart = function (aWindow) {
+            toolbar.appendChild(hbox);
+        };
+        listener.onCustomizeEnd = function (aWindow) {
+            urlbarIcons.insertBefore(hbox, urlbarIcons.firstChild);
+        };
+        listener.onAreaNodeUnregistered = function (aArea, aContainer, aReason) {
+            if (aArea === ID) {
+                hbox.parentNode.removeChild(hbox);
+                toolbar.parentNode.removeChild(toolbar);
+                CustomizableUI.removeListener(listener);
+            }
+        };
+        Object.freeze(listener);
+        CustomizableUI.addListener(listener);
+        return hbox;
     },
     autoHide: function (midx) {
         var addonBar = this._addonBar;
@@ -98,11 +170,19 @@ var UrlAddonBar = {
     },
     uninit: function () {
         this._isInUrlbar = true;
-        this.toggle();
+        if (CustomizableUI) {
+            CustomizableUI.unregisterArea(this.ID);
+            CustomizableUI.REASON_AREA_UNREGISTERED || /* Firefox 29 */
+                this._addonBar.dispatchEvent(new CustomEvent("areaNodeUnregistered", {
+                    "detail": [this.ID, this._addonBar, "area-unregistered"]
+                }));
+        } else {
+            this.toggle();
+            window.removeEventListener("beforecustomization", this, true);
+            window.removeEventListener("aftercustomization", this, false);
+        }
         Services.prefs.removeObserver("extensions.urladdonbar.", this);
         this.autoHide(1);
-        window.removeEventListener("beforecustomization", this, true);
-        window.removeEventListener("aftercustomization", this, false);
         delete this._loaded;
         delete this._addonBar;
     }
