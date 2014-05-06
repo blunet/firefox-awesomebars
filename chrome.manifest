@@ -1,3 +1,5 @@
-content		urladdonbar					/content/
-locale		urladdonbar		en-US		/locale/en-US/
-locale		urladdonbar		zh-CN		/locale/zh-CN/
+content		awesomebars					/content/
+
+locale		awesomebars	en-US			/locale/en-US/
+
+skin		awesomebars	classic/1.0		/skin/common/

@@ -4,41 +4,30 @@
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
     <Description about="urn:mozilla:install-manifest">
 
-        <em:id>urlAddonBar@zbinlin</em:id>
-        <em:version>0.2.3</em:version>
+        <em:id>awesomeBars@blunet.cc</em:id>
+        <em:version>master</em:version>
         <em:type>2</em:type>
-        <em:name>url-addon-bar</em:name>
+        <em:name>awesome-bars</em:name>
 
         <em:targetApplication>
             <Description>
                 <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
-                <em:minVersion>4.0</em:minVersion>
-                <em:maxVersion>32.0a1</em:maxVersion>
+                <em:minVersion>29.0</em:minVersion>
+                <em:maxVersion>*</em:maxVersion>
             </Description>
         </em:targetApplication>
 
         <em:bootstrap>true</em:bootstrap>
-        
-        <em:localized>
-            <Description>
-                <em:locale>zh-CN</em:locale>
-                <em:name>url-addon-bar</em:name>
-                <em:description>将附加组件栏移入地址栏中</em:description>
-                <em:creator>zbinlin</em:creator>
-                <em:homepageURL>http://mozcp.com</em:homepageURL>
-                <em:developer>zbinlin</em:developer>
-                <em:translator>zbinlin</em:translator>
-            </Description>
-        </em:localized>
 
         <em:localized>
             <Description>
                 <em:locale>en-US</em:locale>
-                <em:name>url-addon-bar</em:name>
-                <em:description>addonbar into urlbar</em:description>
-                <em:creator>zbinlin</em:creator>
-                <em:homepageURL>http://mozcp.com</em:homepageURL>
-                <em:developer>zbinlin</em:developer>
+                <em:name>awesome-bars</em:name>
+                <em:description>your toolbars on steroids!</em:description>
+                <em:creator>bernstein</em:creator>
+                <em:homepageURL>http://www.blunet.cc</em:homepageURL>
+                <em:developer>bernstein</em:developer>
+                <em:contributor>zbinlin</em:contributor>
             </Description>
         </em:localized>
 

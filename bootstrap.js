@@ -1,16 +1,15 @@
 "use strict"
 
+const { console } = Components.utils.import("resource://gre/modules/devtools/Console.jsm", {});
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
 
-let UrlAddonBar = {
-    _windowtype: "navigator:browser",
+var AddonLoader = {
 
     get _windows() {
-        var wins = [];
-        this._windowtype || (this._windowtype = "navigator:browser");
-        var cw = Services.wm.getEnumerator(this._windowtype);
+        let wins = [];
+        let cw = Services.wm.getEnumerator(this._windowtype);
         while (cw.hasMoreElements()) {
             let win = cw.getNext();
             win.QueryInterface(Ci.nsIDOMWindow);
@@ -19,149 +18,119 @@ let UrlAddonBar = {
         return wins;
     },
 
+    // - nsIEventListener Interface
+
     handleEvent: function (e) {
-        var doc = e.target;
-        var win = doc.defaultView;
+        let doc = e.target;
+        let win = doc.defaultView;
         win.removeEventListener("load", this, true);
-        if (doc.documentElement.getAttribute("windowtype") !=
-            this._windowtype) return;
-        this.loadScript(win);
+        if (doc.documentElement.getAttribute("windowtype") == this._windowtype)
+            this.loadScript(win);
     },
 
-    loadStyle: function () {
-        var sss = Cc["@mozilla.org/content/style-sheet-service;1"]
-                     .getService(Ci.nsIStyleSheetService);
-        var uri = Services.io.newURI("resource://urladdonbar/skin/overlay.css",
-                                     null, null);
-        sss.sheetRegistered(uri, sss.USER_SHEET)
-            || sss.loadAndRegisterSheet(uri, sss.USER_SHEET);
-    },
-    unloadStyle: function () {
-        var sss = Cc["@mozilla.org/content/style-sheet-service;1"]
-                     .getService(Ci.nsIStyleSheetService);
-        var uri = Services.io.newURI("resource://urladdonbar/skin/overlay.css",
-                                     null, null);
-        sss.sheetRegistered(uri, sss.USER_SHEET)
-            && sss.unregisterSheet(uri, sss.USER_SHEET);
-    },
-    
-    loadScript: function (win) {
-        Services.scriptloader.loadSubScript(
-            "resource://urladdonbar/content/overlay.js",
-            win,
-            "UTF-8"
-        );
-        "UrlAddonBar" in win && typeof win.UrlAddonBar.init === "function"
-            && win.UrlAddonBar.init();
-    },
-    unloadScript: function (win) {
-        "UrlAddonBar" in win && typeof win.UrlAddonBar.uninit === "function" 
-            && win.UrlAddonBar.uninit();
-        delete win.UrlAddonBar;
-    },
+    // - nsIWindowMediatorListener Interface
 
     onOpenWindow: function (aWindow) {
-        var win = aWindow.docShell.QueryInterface(Ci
-            .nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
+        let win = aWindow.docShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
         win.addEventListener("load", this, true);
     },
     onCloseWindow: function (aWindow) {},
     onWindowTitleChange: function (aWindow, aTitle) {},
 
-    init: function () {
-        this.loadStyle();
-        this.loadDefaultPreferences();
-        this._wm = Services.wm;
-        this._wm.addListener(this);
-        this._windows.forEach(function (win) {
-            this.loadScript(win);
-        }, this);
-    },
-    uninit: function () {
-        this.unloadStyle();
-        if (this._wm) this._wm.removeListener(this);
-        delete this._wm;
-        this._windows.forEach(function (win) {
-            this.unloadScript(win);
-        }, this);
-    },
+    // - Entry Points
+    
+    init: function (alias, windowtype, styles, scripts, prefs) {
+        if (!alias || !windowtype) return false;
 
-    loadDefaultPreferences: function () {
-        var _ = {
-            method: function (type) {
-                return ({
-                    "string": "setCharPref",
-                    "number": "setIntPref",
-                    "boolean": "setBoolPref"
-                }[type]);
-            },
-            pref: function (name, value) {
-                try {
-                    let branch = Services.prefs.getDefaultBranch(null);
-                    branch[this.method(typeof value)](name, value);
-                } catch (ex) {
-                    dump(ex);
-                }
-            }
-        };
-        const PREF = "resource://urladdonbar/defaults/preferences/options.js";
-        try {
-            Services.scriptloader.loadSubScript(PREF, _, "UTF-8");
-        } catch (ex) {
-            dump(ex);
-        }
-    }
-
-}
-
-let ResourceAlias = {
-    register: function (alias, data) {
-        var ios = Services.io;
-        if (!alias) return false;
         this._alias = alias;
-        if (this._resProtocolHandler) return false;
-        this._resProtocolHandler = ios.getProtocolHandler("resource");
-        this._resProtocolHandler.QueryInterface(Ci.nsIResProtocolHandler);
-        var uri = data.resourceURI;
-        if (!uri) { // packed
-            if (data.installPath.isDirectory()) {
-                uri = ios.newFileURI(data.installPath);
-            } else { // unpacked
-                let jarProtocolHandler = ios.getProtocolHandler("jar");
-                jarProtocolHandler.QueryInterface(Ci.nsIJARProtocolHandler);
-                let spec = "jar:" + ios.newFileURI(data.installPath).spec + "!/";
-                uri = jarProtocolHandler.newURI(spec, null, null);
-            }
-        }
-        this._resProtocolHandler.setSubstitution(alias, uri);
-        return true;
+        this._windowtype = windowtype;
+        this._styles = styles || [];
+        this._scripts = scripts || [];
+
+        for (let style of this._styles)
+            this.loadStyle(style);
+
+        for (let pref of prefs || [])
+            this.loadDefaultPreferences(pref);
+
+        Services.wm.addListener(this);
+        for (let win of this._windows)
+            for (let script of this._scripts)
+                this.loadScript(win, script);
     },
-    unregister: function () {
-        if (!this._resProtocolHandler) return false;
-        this._resProtocolHandler.setSubstitution(this._alias, null);
-        delete this._resProtocolHandler;
+    uninit: function () 
+        for (let style of this._styles)
+            this.unloadStyle(style);
+
+        Services.wm.removeListener(this);
+        for (let win of this._windows)
+            for (let script of this._scripts)
+                this.unloadScript(win, script);
+
         delete this._alias;
-        return true;
+        delete this._windowtype;
+        delete this._styles;
+        delete this._scripts;
+    },
+
+    // - internal
+
+    loadStyle: function (style) {
+        let sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
+        let uri = Services.io.newURI("chrome://"+this._alias+"/skin/common/"+style, null, null);
+        sss.sheetRegistered(uri, sss.USER_SHEET) || sss.loadAndRegisterSheet(uri, sss.USER_SHEET);
+    },
+    unloadStyle: function (style) {
+        let sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
+        let uri = Services.io.newURI("chrome://"+this._alias+"/skin/common/"+style, null, null);
+        sss.sheetRegistered(uri, sss.USER_SHEET) && sss.unregisterSheet(uri, sss.USER_SHEET);
+    },
+    
+    loadScript: function (win, script) {
+        Services.scriptloader.loadSubScript("chrome://"+this._alias+"/content/"+script, win, "UTF-8");
+        "AddonBars" in win && typeof win.AddonBars.init === "function" && win.AddonBars.init();
+    },
+    unloadScript: function (win, script) {
+        "AddonBars" in win && typeof win.AddonBars.uninit === "function" && win.AddonBars.uninit();
+        delete win.AddonBars;
+    },
+
+    loadDefaultPreferences: function (script) {
+        try {
+            Services.scriptloader.loadSubScript("chrome://"+this._alias+"/content/"+script, {
+                method: function (type) {
+                    return ({
+                        "string": "setCharPref",
+                        "number": "setIntPref",
+                        "boolean": "setBoolPref"
+                    }[type]);
+                },
+                pref: function (name, value) {
+                    try {
+                        Services.prefs.getDefaultBranch(null)[this.method(typeof value)](name, value);
+                    } catch (ex) {
+                        console.log(ex);
+                    }
+                }
+            }, "UTF-8");
+        } catch (ex) {
+            console.log(ex);
+        }
     }
 }
 
-// 启用
+// - Entry Points
+
 function startup(data, reason) {
-    const alias = "urladdonbar";
-    ResourceAlias.register(alias, data);
-    UrlAddonBar.init();
+    AddonLoader.init("awesomebars", "navigator:browser", ["overlay.css"], ["overlay.js"], ["defaultPrefs.js"]);
 }
 
-// 禁用或应用程序退出
 function shutdown(data, reason) {
-    ResourceAlias.unregister();
-    UrlAddonBar.uninit();
+    AddonLoader.uninit();
 }
 
-// 安装
 function install(data, reason) {
 }
 
-// 卸载
 function uninstall(data, reason) {
 }

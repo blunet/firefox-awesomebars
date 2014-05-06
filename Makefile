@@ -1,18 +1,18 @@
-XPIFILE = urlAddonBar@zbinlin.xpi
+XPIFILE = awesomeBars@blunet.cc.xpi
 
 TOP = install.rdf bootstrap.js options.xul chrome.manifest
-CONTENT = content/overlay.js
-SKIN = skin/overlay.css
-DEFAULTS = defaults/preferences/options.js
-LOCALE = locale/*/options.dtd
+CONTENT = content/*
+LIBRARY = content/library/*
+SKIN = skin/*/*
+LOCALE = locale/*/*
 
 all: ${XPIFILE}
 
-${XPIFILE}: ${TOP} ${CONTENT} ${SKIN} ${DEFAULTS} ${LOCALE}
+${XPIFILE}: ${TOP} ${CONTENT} ${LIBRARY} ${SKIN} ${LOCALE}
 	zip $@ $^
 
 install:
-	firefox ${XPIFILE}
+	open -a Firefox.app ${XPIFILE}
 
 clean:
 	rm -f ${XPIFILE}
