@@ -49,6 +49,7 @@ this.UrlAddonBar = {
         for (let [key, value] of Iterator({
                            "mode": navbox && navbox.getAttribute("mode") || "icons",
                        "iconsize": navbox && navbox.getAttribute("iconsize") || "small",
+                      "collapsed": false,
                     "toolbarname": "Addon-bar",
                    "customizable": true,
                      "defaultset": "webrtc-status-button,bookmarks-menu-button,downloads-button,home-button,social-share-button,social-toolbar-item" /* or call: CustomizableUI.registerArea(ID, {}); */,
@@ -64,9 +65,6 @@ this.UrlAddonBar = {
             var visible = evt.detail.visible;
             hbox.setAttribute(HIDING_ATTR, !visible);
         });
-
-        var navbar = document.getElementById("nav-bar");
-        navbar.parentNode.insertBefore(toolbar, navbar.nextSibling);
 
         hbox.addEventListener("areaNodeUnregistered", function _(evt) {
             hbox.removeEventListener("areaNodeUnregistered", _);
@@ -88,6 +86,10 @@ this.UrlAddonBar = {
         };
         Object.freeze(listener);
         CustomizableUI.addListener(listener);
+
+        var navbar = document.getElementById("nav-bar");
+        navbar.parentNode.insertBefore(toolbar, navbar.nextSibling);
+
         return hbox;
     },
     autoHide: function (midx) {
