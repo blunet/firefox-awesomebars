@@ -43,6 +43,11 @@ this.UrlAddonBar = {
         var urlbarIcons = document.getElementById("urlbar-icons");
         urlbarIcons.insertBefore(hbox, urlbarIcons.firstChild);
 
+        var statusBar = document.getElementById("status-bar");
+        if (statusBar) {
+            urlbarIcons.insertBefore(statusBar, hbox.nextSibling);
+        }
+
         var toolbar = document.createElement("toolbar");
         var navbox = document.getElementById("navigator-toolbox");
         toolbar.id = ID;
@@ -82,6 +87,9 @@ this.UrlAddonBar = {
                 hbox.parentNode.removeChild(hbox);
                 toolbar.parentNode.removeChild(toolbar);
                 CustomizableUI.removeListener(listener);
+                let (addonBar = document.getElementById("addon-bar")) {
+                    addonBar && addonBar.appendChild(statusBar);
+                }
             }
         };
         Object.freeze(listener);

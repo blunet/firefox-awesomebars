@@ -143,7 +143,7 @@
         padding: 1px !important;
     }
     #urlbar-icons > .addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-dropmarker {
-        margin: 0 !important;
+        margin: 0 0 0 -1px !important;
         padding: 0 !important;
     }
     #urlbar-icons > .addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-dropmarker::before {
@@ -153,14 +153,38 @@
         border: 0 !important;
         margin: 0 0 0 1px !important;
         min-height: 20px !important;
-        padding-top: 1px !important;
-        padding-bottom: 1px !important;
+        padding: 7px 2px 6px 1px !important;
+        min-width: 12px !important;
+    }
+    @media (-moz-os-version: windows-xp),
+           (-moz-os-version: windows-vista),
+           (-moz-os-version: windows-win7),
+           (-moz-os-version: windows-win8) {
+        #urlbar-icons > .addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-dropmarker > .dropmarker-icon {
+            padding: 7px 1px 6px !important;
+            min-width: 9px !important;
+        }
     }
     #urlbar-icons > .addon-bar .toolbarbutton-1 > .toolbarbutton-menu-dropmarker {
         visibility: collapse !important;
     }
 
+    #urlbar-icons > .addon-bar[collapsed="true"] ~ #status-bar {
+        visibility: collapse !important;
+    }
     #urlbar-icons > .addon-bar #bookmarks-menu-button > .toolbarbutton-menubutton-dropmarker > .dropmarker-icon {
         padding: 1px !important;
+    }
+    #urlbar-icons > #status-bar {
+        -moz-appearance: none !important;
+        border: 0 !important;
+        padding: 0 !important;
+        min-height: 20px !important;
+        background: none !important;
+    }
+    #urlbar-icons > #status-bar statusbarpanel {
+        -moz-appearance: none !important;
+        border: 0 !important;
+        background: none !important;
     }
 }
