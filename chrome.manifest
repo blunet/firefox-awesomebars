@@ -3,3 +3,7 @@ content		awesomebars					/content/
 locale		awesomebars	en-US			/locale/en-US/
 
 skin		awesomebars	classic/1.0		/skin/common/
+# using these will replace all files, even if not present
+#skin		awesomebars	classic/1.0		/skin/win/		os=WINNT
+#skin		awesomebars	classic/1.0		/skin/osx/		os=Darwin
+#skin		awesomebars	classic/1.0		/skin/ubuntu/	os=Linux
