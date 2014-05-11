@@ -1,12 +1,15 @@
+// un-/load given js into each window of given type
+// un-/load given css into *app context*
+// load default preferences from given js
 "use strict"
 
 const EXPORTED_SYMBOLS = ["AddonManager"];
 
-Components.utils.import("resource://gre/modules/devtools/Console.jsm", this);
-Components.utils.import("resource://gre/modules/Services.jsm", this);
+// imports
+this.log = Components.utils.import("resource://gre/modules/devtools/Console.jsm", {}).console;
+this.Services = Components.utils.import("resource://gre/modules/Services.jsm", {}).Services;
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
-
+// public interface
 const AddonManager = {
     init: function (clazz, windowtype, styles, scripts, prefs) {
         AddonManagerInternal.init(clazz, windowtype, styles, scripts, prefs);
@@ -16,17 +19,43 @@ const AddonManager = {
     }
 };
 
-// un-/load given js into each window of given type
-// un-/load given css into *app context*
-// load default preferences from given js
+// private implementatioion
 const AddonManagerInternal = {
 
-    get _windows() { // dynamic as not to keep window references
-        let wins = [];
-        let cw = Services.wm.getEnumerator(this._windowtype);
-        while (cw.hasMoreElements()) 
-            wins.push(cw.getNext().QueryInterface(Ci.nsIDOMWindow));
-        return wins;
+    init: function (clazz, windowtype, styles, scripts, prefs) {
+        if (!clazz || !windowtype) return false;
+
+        this._clazz = clazz;
+        this._windowtype = windowtype;
+        this._styles = styles || [];
+        this._scripts = scripts || [];
+
+        let sss = this.getStyleSheetService();
+        for (let style of this._styles)
+            this.loadStyle(sss, style);
+
+        for (let pref of prefs || [])
+            this.loadDefaultPreferences(pref);
+
+        Services.wm.addListener(this);
+        for (let win of this._windows)
+            for (let script of this._scripts)
+                this.loadScript(win, script);
+    },
+    uninit: function () {
+        let sss = this.getStyleSheetService();
+        for (let style of this._styles)
+            this.unloadStyle(sss, style);
+
+        Services.wm.removeListener(this);
+        for (let win of this._windows)
+            for (let script of this._scripts)
+                this.unloadScript(win, script);
+
+        delete this._clazz;
+        delete this._windowtype;
+        delete this._styles;
+        delete this._scripts;
     },
 
     // - nsIEventListener Interface
@@ -40,58 +69,34 @@ const AddonManagerInternal = {
 
     // - nsIWindowMediatorListener Interface
 
-    onOpenWindow: function (window) {
-        let win = window.docShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
-        win.addEventListener("load", this, true);
+    onOpenWindow: function (xulWindow) {
+        xulWindow.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                 .getInterface(Components.interfaces.nsIDOMWindow)
+                 .addEventListener("load", this, true);
     },
-    onCloseWindow: function (window) {},
-    onWindowTitleChange: function (window, title) {},
-
-    // - Entry Points
-    
-    init: function (clazz, windowtype, styles, scripts, prefs) {
-        if (!clazz || !windowtype) return false;
-
-        this._clazz = clazz;
-        this._windowtype = windowtype;
-        this._styles = styles || [];
-        this._scripts = scripts || [];
-
-        for (let style of this._styles)
-            this.loadStyle(style);
-
-        for (let pref of prefs || [])
-            this.loadDefaultPreferences(pref);
-
-        Services.wm.addListener(this);
-        for (let win of this._windows)
-            for (let script of this._scripts)
-                this.loadScript(win, script);
-    },
-    uninit: function () {
-        for (let style of this._styles)
-            this.unloadStyle(style);
-
-        Services.wm.removeListener(this);
-        for (let win of this._windows)
-            for (let script of this._scripts)
-                this.unloadScript(win, script);
-
-        delete this._clazz;
-        delete this._windowtype;
-        delete this._styles;
-        delete this._scripts;
-    },
+    onCloseWindow: function (xulWindow) {},
+    onWindowTitleChange: function (xulWindow, title) {},
 
     // - internal
 
-    loadStyle: function (style) {
-        let sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
+    get _windows() { // dynamic as not to keep window references
+        let wins = [];
+        let cw = Services.wm.getEnumerator(this._windowtype);
+        while (cw.hasMoreElements()) 
+            wins.push(cw.getNext().QueryInterface(Components.interfaces.nsIDOMWindow));
+        return wins;
+    },
+
+    getStyleSheetService: function() {
+        return Components.classes["@mozilla.org/content/style-sheet-service;1"]
+               .getService(Components.interfaces.nsIStyleSheetService);
+    },
+
+    loadStyle: function (sss, style) {
         let uri = Services.io.newURI("chrome://"+this._clazz+"/skin/"+style, null, null);
         sss.sheetRegistered(uri, sss.USER_SHEET) || sss.loadAndRegisterSheet(uri, sss.USER_SHEET);
     },
-    unloadStyle: function (style) {
-        let sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
+    unloadStyle: function (sss, style) {
         let uri = Services.io.newURI("chrome://"+this._clazz+"/skin/"+style, null, null);
         sss.sheetRegistered(uri, sss.USER_SHEET) && sss.unregisterSheet(uri, sss.USER_SHEET);
     },
@@ -119,12 +124,12 @@ const AddonManagerInternal = {
                     try {
                         Services.prefs.getDefaultBranch(null)[this.method(typeof value)](name, value);
                     } catch (ex) {
-                        console.log(ex);
+                        log.error(ex);
                     }
                 }
             }, "UTF-8");
         } catch (ex) {
-            console.log(ex);
+            log.error(ex);
         }
     }
 };
