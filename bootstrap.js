@@ -1,48 +1,44 @@
 "use strict"
 
-const { console } = Components.utils.import("resource://gre/modules/devtools/Console.jsm", {});
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+Components.utils.import("resource://gre/modules/devtools/Console.jsm", this);
+Components.utils.import("resource://gre/modules/Services.jsm", this);
 
-Cu.import("resource://gre/modules/Services.jsm");
+const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 var AddonLoader = {
 
-    get _windows() {
+    get _windows() { // dynamic as not to keep window references
         let wins = [];
         let cw = Services.wm.getEnumerator(this._windowtype);
-        while (cw.hasMoreElements()) {
-            let win = cw.getNext();
-            win.QueryInterface(Ci.nsIDOMWindow);
-            wins.push(win);
-        }
+        while (cw.hasMoreElements()) 
+            wins.push(cw.getNext().QueryInterface(Ci.nsIDOMWindow));
         return wins;
     },
 
     // - nsIEventListener Interface
 
     handleEvent: function (e) {
-        let doc = e.target;
-        let win = doc.defaultView;
+        let win = e.target.defaultView;
         win.removeEventListener("load", this, true);
-        if (doc.documentElement.getAttribute("windowtype") == this._windowtype)
+        if (e.target.documentElement.getAttribute("windowtype") == this._windowtype)
             this.loadScript(win);
     },
 
     // - nsIWindowMediatorListener Interface
 
-    onOpenWindow: function (aWindow) {
-        let win = aWindow.docShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
+    onOpenWindow: function (window) {
+        let win = window.docShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
         win.addEventListener("load", this, true);
     },
-    onCloseWindow: function (aWindow) {},
-    onWindowTitleChange: function (aWindow, aTitle) {},
+    onCloseWindow: function (window) {},
+    onWindowTitleChange: function (window, title) {},
 
     // - Entry Points
     
-    init: function (alias, windowtype, styles, scripts, prefs) {
-        if (!alias || !windowtype) return false;
+    init: function (clazz, windowtype, styles, scripts, prefs) {
+        if (!clazz || !windowtype) return false;
 
-        this._alias = alias;
+        this._clazz = clazz;
         this._windowtype = windowtype;
         this._styles = styles || [];
         this._scripts = scripts || [];
@@ -58,7 +54,7 @@ var AddonLoader = {
             for (let script of this._scripts)
                 this.loadScript(win, script);
     },
-    uninit: function () 
+    uninit: function () {
         for (let style of this._styles)
             this.unloadStyle(style);
 
@@ -67,7 +63,7 @@ var AddonLoader = {
             for (let script of this._scripts)
                 this.unloadScript(win, script);
 
-        delete this._alias;
+        delete this._clazz;
         delete this._windowtype;
         delete this._styles;
         delete this._scripts;
@@ -77,27 +73,27 @@ var AddonLoader = {
 
     loadStyle: function (style) {
         let sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
-        let uri = Services.io.newURI("chrome://"+this._alias+"/skin/common/"+style, null, null);
+        let uri = Services.io.newURI("chrome://"+this._clazz+"/skin/"+style, null, null);
         sss.sheetRegistered(uri, sss.USER_SHEET) || sss.loadAndRegisterSheet(uri, sss.USER_SHEET);
     },
     unloadStyle: function (style) {
         let sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
-        let uri = Services.io.newURI("chrome://"+this._alias+"/skin/common/"+style, null, null);
+        let uri = Services.io.newURI("chrome://"+this._clazz+"/skin/"+style, null, null);
         sss.sheetRegistered(uri, sss.USER_SHEET) && sss.unregisterSheet(uri, sss.USER_SHEET);
     },
     
     loadScript: function (win, script) {
-        Services.scriptloader.loadSubScript("chrome://"+this._alias+"/content/"+script, win, "UTF-8");
-        "AddonBars" in win && typeof win.AddonBars.init === "function" && win.AddonBars.init();
+        Services.scriptloader.loadSubScript("chrome://"+this._clazz+"/content/"+script, win, "UTF-8");
+        this._clazz in win && typeof win[this._clazz].init === "function" && win[this._clazz].init();
     },
     unloadScript: function (win, script) {
-        "AddonBars" in win && typeof win.AddonBars.uninit === "function" && win.AddonBars.uninit();
-        delete win.AddonBars;
+        [this._clazz] in win && typeof win[this._clazz].uninit === "function" && win[this._clazz].uninit();
+        delete win[this._clazz];
     },
 
     loadDefaultPreferences: function (script) {
         try {
-            Services.scriptloader.loadSubScript("chrome://"+this._alias+"/content/"+script, {
+            Services.scriptloader.loadSubScript("chrome://"+this._clazz+"/content/"+script, {
                 method: function (type) {
                     return ({
                         "string": "setCharPref",
