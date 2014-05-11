@@ -7,10 +7,19 @@ Components.utils.import("resource://gre/modules/Services.jsm", this);
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
+const AddonManager = {
+    init: function (clazz, windowtype, styles, scripts, prefs) {
+        AddonManagerInternal.init(clazz, windowtype, styles, scripts, prefs);
+    },
+    uninit: function () {
+        AddonManagerInternal.uninit();
+    }
+};
+
 // un-/load given js into each window of given type
 // un-/load given css into *app context*
 // load default preferences from given js
-const AddonManager = {
+const AddonManagerInternal = {
 
     get _windows() { // dynamic as not to keep window references
         let wins = [];
