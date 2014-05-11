@@ -8,7 +8,7 @@ let CustomizableUI = window.CustomizableUI || (function () {
     };
 })();
 
-this.UrlAddonBar = {
+this.AwesomeBars = {
     ID: "uab-addon-bar",
     AUTOHIDE: "url-addon-bar-auto-hide",
     AUTOHIDEFOCUS: "url-addon-bar-auto-hide-focus",
@@ -31,8 +31,8 @@ this.UrlAddonBar = {
             }
         }
 
-        Services.prefs.getBoolPref("extensions.urladdonbar.autohide") && this.autoHide(0);
-        Services.prefs.addObserver("extensions.urladdonbar.", this, false);
+        Services.prefs.getBoolPref("extensions.awesomebars.autohide") && this.autoHide(0);
+        Services.prefs.addObserver("extensions.awesomebars.", this, false);
     },
     createCustomizableToolbar: function () {
         const ID = this.ID, TID = ID + "-customization-target";
@@ -147,7 +147,7 @@ this.UrlAddonBar = {
     observe: function (aSubject, aTopic, aData) {
         if ("nsPref:changed" !== aTopic) return;
         aSubject.QueryInterface(Ci.nsIPrefBranch);
-        if ("extensions.urladdonbar.autohide" === aData) {
+        if ("extensions.awesomebars.autohide" === aData) {
             this.autoHide(aSubject.getBoolPref(aData) ? 0 : 1);
         }
 
@@ -191,7 +191,7 @@ this.UrlAddonBar = {
             window.removeEventListener("beforecustomization", this, true);
             window.removeEventListener("aftercustomization", this, false);
         }
-        Services.prefs.removeObserver("extensions.urladdonbar.", this);
+        Services.prefs.removeObserver("extensions.awesomebars.", this);
         this.autoHide(1);
         delete this._loaded;
         delete this._addonBar;
