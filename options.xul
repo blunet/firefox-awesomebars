@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<!DOCTYPE urladdonbar SYSTEM "chrome://urladdonbar/locale/options.dtd">
+
+<vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+    <setting type="bool" pref="extensions.urladdonbar.autohide" title="&title;" desc="&desc;" />
+</vbox>

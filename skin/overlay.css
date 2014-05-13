@@ -2,83 +2,118 @@
 
 @-moz-document url("chrome://browser/content/browser.xul") {
 
-#urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-dropmarker {
-    border-style: none !important;
-    box-shadow: none !important;
-    padding: 0 0 0 1px !important;
-}
+    #navigator-toolbox[iconsize="large"] #addon-bar .toolbarbutton-menu-dropmarker {
+        margin-left: 0 !important;
+    }
+    #navigator-toolbox[iconsize="large"] #addon-bar .toolbarbutton-1 .toolbarbutton-icon,
+    #navigator-toolbox[iconsize="large"] #addon-bar .toolbarbutton-1 .toolbarbutton-menubutton-dropmarker,
+    #navigator-toolbox[iconsize="large"] #addon-bar .toolbarbutton-1 .dropmarker-icon {
+        border: 0 !important;
+        background-image: none !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        -moz-transition: none !important;
+    }
+    #navigator-toolbox[iconsize="large"] #addon-bar .toolbarbutton-menubutton-dropmarker:before {
+        display: none !important;
+    }
+    #navigator-toolbox[iconsize="large"] #addon-bar .toolbarbutton-menubutton-dropmarker > .dropmarker-icon {
+        border: 0 !important;
+        padding: 0 !important;
+    }
 
-#urlbar-icons > * {
-    padding: 0 3px !important;
-}
+    #urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-dropmarker {
+        border-style: none !important;
+        box-shadow: none !important;
+        padding: 0 0 0 1px !important;
+        background: transparent !important;
+    }
 
-#urlbar-icons > #addon-bar,
-#urlbar-icons > #addon-bar > #status-bar {
-    -moz-appearance: none !important;
-    height: 18px !important;
-    min-height: 18px !important;
-    border-style: none !important;
-    background: transparent !important;
-    -moz-box-align: center !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    box-shadow: none !important;
-}
+    #urlbar-icons > * {
+        padding: 0 3px !important;
+    }
 
-#urlbar-icons > #addon-bar > toolbaritem {
-    -moz-box-align: center !important;
-    -moz-box-pack: center !important;
-}
+    #urlbar-icons > #addon-bar,
+    #urlbar-icons > #addon-bar > #status-bar {
+        -moz-appearance: none !important;
+        height: 18px !important;
+        min-height: 18px !important;
+        border-style: none !important;
+        background: transparent !important;
+        -moz-box-align: center !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+    }
 
-#urlbar-icons > #addon-bar .toolbarbutton-1,
-#urlbar-icons > #addon-bar statusbarpanel,
-#urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-button {
-    -moz-appearance: none !important;
-    border-style: none !important;
-    border-radius: 0 !important;
-    padding: 0 3px !important;
-    margin: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    -moz-box-align: center !important;
-    -moz-box-pack: center !important;
-}
+    #urlbar-icons > #addon-bar > toolbaritem,
+    #urlbar-icons #status-bar > toolbaritem {
+        -moz-box-align: center !important;
+        -moz-box-pack: center !important;
+    }
 
-#urlbar-icons > #addon-bar > .toolbarbutton-1,
-#urlbar-icons > #addon-bar > #status-bar > statusbarpanel {
-    min-width: 18px !important;
-    min-height: 18px !important;
-}
+    #urlbar-icons > #addon-bar .toolbarbutton-1,
+    #urlbar-icons > #addon-bar statusbarpanel,
+    #urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-button {
+        -moz-appearance: none !important;
+        border-style: none !important;
+        border-radius: 0 !important;
+        padding: 0 3px !important;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        -moz-box-align: center !important;
+        -moz-box-pack: center !important;
+    }
 
-#urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-icon,
-#urlbar-icons > #addon-bar > #status-bar > statusbarpanel > .statusbarpanel-icon {
-    max-width: 18px !important;
-    /* max-height: 18px !important; */
-    padding: 0 !important;
-    margin: 0 !important;
-}
+    #urlbar-icons > #addon-bar > .toolbarbutton-1,
+    #urlbar-icons > #addon-bar > #status-bar > statusbarpanel {
+        min-width: 18px !important;
+        min-height: 18px !important;
+    }
 
-#urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-button,
-#urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-button > .toolbarbutton-icon {
-    padding: 0 !important;
-    margin: 0 !important;
-}
+    #urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-icon,
+    #urlbar-icons > #addon-bar > #status-bar > statusbarpanel > .statusbarpanel-icon {
+        max-width: 18px !important;
+        /* max-height: 18px !important; */
+        padding: 0 !important;
+        margin: 0 !important;
+    }
 
-#urlbar-icons > #addon-bar .toolbarbutton-1:not([disabled="true"]):hover,
-#urlbar-icons > #addon-bar .toolbarbutton-1:not([disabled="true"])[type="menu-button"]:hover,
-#urlbar-icons > #addon-bar .toolbarbutton-1:not([disabled="true"])[open="true"],
-#urlbar-icons > #addon-bar .toolbarbutton-1:not([disabled="true"])[type="menu-button"][open="true"],
-#urlbar-icons > #addon-bar > #status-bar statusbarpanel:not([disabled="true"]):hover,
-#urlbar-icons > #addon-bar > #status-bar statusbarpanel:not([disabled="true"])[open="true"] {
-    background-image: -moz-linear-gradient(rgba(242, 245, 249, 0.95), rgba(220, 223, 225, 0.67) 49%, rgba(198, 204, 208, 0.65) 51%, rgba(194, 197, 201, 0.3)) !important;
-}
+    #urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-button,
+    #urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-button > .toolbarbutton-icon {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
 
-#urlbar-icons > #addon-bar #addonbar-closebutton,
-#urlbar-icons > #addon-bar toolbarspring,
-#urlbar-icons > #addon-bar toolbarspacer,
-#urlbar-icons > #addon-bar toolbarseparator,
-#urlbar-icons > #addon-bar > #status-bar > .statusbar-resizerpanel {
-    display: none !important;
-}
+    #urlbar-icons > #addon-bar .toolbarbutton-1:not([disabled="true"]):hover,
+    #urlbar-icons > #addon-bar .toolbarbutton-1:not([disabled="true"])[type="menu-button"]:hover,
+    #urlbar-icons > #addon-bar .toolbarbutton-1:not([disabled="true"])[open="true"],
+    #urlbar-icons > #addon-bar .toolbarbutton-1:not([disabled="true"])[type="menu-button"][open="true"],
+    #urlbar-icons > #addon-bar > #status-bar statusbarpanel:not([disabled="true"]):hover,
+    #urlbar-icons > #addon-bar > #status-bar statusbarpanel:not([disabled="true"])[open="true"] {
+        background-image: -moz-linear-gradient(rgba(242, 245, 249, 0.95), rgba(220, 223, 225, 0.67) 49%, rgba(198, 204, 208, 0.65) 51%, rgba(194, 197, 201, 0.3)) !important;
+    }
+
+    #urlbar-icons > #addon-bar #addonbar-closebutton,
+    #urlbar-icons > #addon-bar toolbarspring,
+    #urlbar-icons > #addon-bar toolbarspacer,
+    #urlbar-icons > #addon-bar toolbarseparator,
+    #urlbar-icons > #addon-bar > #status-bar > .statusbar-resizerpanel {
+        display: none !important;
+    }
+
+    /* autohide */
+    #urlbar-icons > #addon-bar.url-addon-bar-auto-hide {
+        overflow: hidden !important;
+        transition: width 0.75s !important;
+    }
+    #urlbar-icons > #addon-bar.url-addon-bar-auto-hide.url-addon-bar-auto-hide-focus {
+        width: 0 !important;
+    }
+
+    #urlbar-icons > #addon-bar[moz-collapsed="true"] {
+        visibility: inherit !important;
+    }
 
 }
