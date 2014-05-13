@@ -50,6 +50,14 @@
     min-height: 18px !important;
 }
 
+#urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-icon,
+#urlbar-icons > #addon-bar > #status-bar > statusbarpanel > .statusbarpanel-icon {
+    max-width: 18px !important;
+    /* max-height: 18px !important; */
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
 #urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-button,
 #urlbar-icons > #addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-button > .toolbarbutton-icon {
     padding: 0 !important;
