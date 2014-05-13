@@ -4,13 +4,13 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
 
-var UrlAddonBar = {
+let UrlAddonBar = {
     _windowtype: "navigator:browser",
 
     get _windows() {
-        let wins = [];
+        var wins = [];
         this._windowtype || (this._windowtype = "navigator:browser");
-        let cw = Services.wm.getEnumerator(this._windowtype);
+        var cw = Services.wm.getEnumerator(this._windowtype);
         while (cw.hasMoreElements()) {
             let win = cw.getNext();
             win.QueryInterface(Ci.nsIDOMWindow);
@@ -20,8 +20,8 @@ var UrlAddonBar = {
     },
 
     handleEvent: function (e) {
-        let doc = e.target;
-        let win = doc.defaultView;
+        var doc = e.target;
+        var win = doc.defaultView;
         win.removeEventListener("load", this, true);
         if (doc.documentElement.getAttribute("windowtype") !=
             this._windowtype) return;
@@ -29,17 +29,17 @@ var UrlAddonBar = {
     },
 
     loadStyle: function () {
-        let sss = Cc["@mozilla.org/content/style-sheet-service;1"]
+        var sss = Cc["@mozilla.org/content/style-sheet-service;1"]
                      .getService(Ci.nsIStyleSheetService);
-        let uri = Services.io.newURI("resource://urladdonbar/skin/overlay.css",
+        var uri = Services.io.newURI("resource://urladdonbar/skin/overlay.css",
                                      null, null);
         sss.sheetRegistered(uri, sss.USER_SHEET)
             || sss.loadAndRegisterSheet(uri, sss.USER_SHEET);
     },
     unloadStyle: function () {
-        let sss = Cc["@mozilla.org/content/style-sheet-service;1"]
+        var sss = Cc["@mozilla.org/content/style-sheet-service;1"]
                      .getService(Ci.nsIStyleSheetService);
-        let uri = Services.io.newURI("resource://urladdonbar/skin/overlay.css",
+        var uri = Services.io.newURI("resource://urladdonbar/skin/overlay.css",
                                      null, null);
         sss.sheetRegistered(uri, sss.USER_SHEET)
             && sss.unregisterSheet(uri, sss.USER_SHEET);
@@ -61,7 +61,7 @@ var UrlAddonBar = {
     },
 
     onOpenWindow: function (aWindow) {
-        let win = aWindow.docShell.QueryInterface(Ci
+        var win = aWindow.docShell.QueryInterface(Ci
             .nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
         win.addEventListener("load", this, true);
     },
@@ -116,13 +116,13 @@ var UrlAddonBar = {
 
 let ResourceAlias = {
     register: function (alias, data) {
-        let ios = Services.io;
+        var ios = Services.io;
         if (!alias) return false;
         this._alias = alias;
         if (this._resProtocolHandler) return false;
         this._resProtocolHandler = ios.getProtocolHandler("resource");
         this._resProtocolHandler.QueryInterface(Ci.nsIResProtocolHandler);
-        let uri = data.resourceURI;
+        var uri = data.resourceURI;
         if (!uri) { // packed
             if (data.installPath.isDirectory()) {
                 uri = ios.newFileURI(data.installPath);

@@ -104,16 +104,52 @@
     }
 
     /* autohide */
-    #urlbar-icons > #addon-bar.url-addon-bar-auto-hide {
+    #urlbar-icons > #addon-bar.url-addon-bar-auto-hide,
+    #urlbar-icons > .addon-bar.url-addon-bar-auto-hide {
         overflow: hidden !important;
         transition: width 0.75s !important;
     }
-    #urlbar-icons > #addon-bar.url-addon-bar-auto-hide.url-addon-bar-auto-hide-focus {
+    #urlbar-icons > #addon-bar.url-addon-bar-auto-hide.url-addon-bar-auto-hide-focus,
+    #urlbar-icons > .addon-bar.url-addon-bar-auto-hide.url-addon-bar-auto-hide-focus {
         width: 0 !important;
     }
 
-    #urlbar-icons > #addon-bar[moz-collapsed="true"] {
+    #urlbar-icons > #addon-bar[moz-collapsed="true"],
+    #urlbar-icons > .addon-bar[moz-collapsed="true"] {
         visibility: inherit !important;
     }
 
+    /* For australis */
+    #uab-addon-bar:empty {
+        visibility: collapse;
+    }
+    #uab-addon-bar > .addon-bar {
+        -moz-box-flex: 1;
+        min-height: 30px;
+    }
+    #urlbar-icons > .addon-bar .toolbarbutton-1 {
+        padding: 0 2px !important;
+        margin: 0 1px 0 0 !important;
+    }
+    #urlbar-icons > .addon-bar .toolbarbutton-1 > .toolbarbutton-icon {
+        border: 0 !important;
+        padding: 1px !important;
+    }
+    #urlbar-icons > .addon-bar .toolbarbutton-menubutton-button {
+        padding: 0 1px !important;
+    }
+    #urlbar-icons > .addon-bar .toolbarbutton-menubutton-button > .toolbarbutton-icon {
+        border: 0 !important;
+        padding: 1px !important;
+    }
+    #urlbar-icons > .addon-bar .toolbarbutton-menubutton-dropmarker {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    #urlbar-icons > .addon-bar .toolbarbutton-menubutton-dropmarker > .dropmarker-icon {
+        border: 0 !important;
+        padding: 1px !important;
+        margin: 0 0 0 1px !important;
+        min-height: 20px !important;
+    }
 }
