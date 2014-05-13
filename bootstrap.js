@@ -102,7 +102,7 @@ let ResourceAlias = {
             } else { // unpacked
                 let jarProtocolHandler = ios.getProtocolHandler("jar");
                 jarProtocolHandler.QueryInterface(Ci.nsIJARProtocolHandler);
-                let spec = "jar:" + ios.newFileURI(data.installPath);
+                let spec = "jar:" + ios.newFileURI(data.installPath).spec + "!/";
                 uri = jarProtocolHandler.newURI(spec, null, null);
             }
         }
