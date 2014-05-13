@@ -5,7 +5,7 @@
     <Description about="urn:mozilla:install-manifest">
 
         <em:id>urlAddonBar@zbinlin</em:id>
-        <em:version>0.0.6</em:version>
+        <em:version>0.0.8</em:version>
         <em:type>2</em:type>
         <em:name>url-addon-bar</em:name>
 
@@ -13,7 +13,7 @@
             <Description>
                 <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
                 <em:minVersion>4.0</em:minVersion>
-                <em:maxVersion>8.0a1</em:maxVersion>
+                <em:maxVersion>10.0a1</em:maxVersion>
             </Description>
         </em:targetApplication>
 
@@ -25,7 +25,7 @@
                 <em:name>url-addon-bar</em:name>
                 <em:description>将附加组件栏移入地址栏中</em:description>
                 <em:creator>zbinlin</em:creator>
-                <em:homepageURL>http://www.czcp.co.cc</em:homepageURL>
+                <em:homepageURL>http://bitcp.com</em:homepageURL>
                 <em:developer>zbinlin</em:developer>
                 <em:translator>zbinlin</em:translator>
             </Description>
@@ -37,7 +37,7 @@
                 <em:name>url-addon-bar</em:name>
                 <em:description>addonbar into urlbar</em:description>
                 <em:creator>zbinlin</em:creator>
-                <em:homepageURL>http://www.czcp.co.cc</em:homepageURL>
+                <em:homepageURL>http://bitcp.com</em:homepageURL>
                 <em:developer>zbinlin</em:developer>
             </Description>
         </em:localized>

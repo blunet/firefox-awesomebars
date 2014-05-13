@@ -18,22 +18,29 @@ var UrlAddonBar = {
     display: none !important;
 }
 
-#urlbar-icons > #addon-bar {
+#urlbar-icons > * {
+    padding: 0 3px !important;
+}
+
+#urlbar-icons > #addon-bar,
+#urlbar-icons > #addon-bar > #status-bar {
     -moz-appearance: none !important;
     height: 18px !important;
     min-height: 18px !important;
     border-style: none !important;
     background: transparent !important;
+    -moz-box-align: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 #urlbar-icons > #addon-bar toolbarbutton,
-#urlbar-icons > #addon-bar > #status-bar statusbarpanel {
+#urlbar-icons > #addon-bar statusbarpanel {
     border-style: none !important;
-    height: 18px !important;
     min-width: 18px !important;
-    min-height: 18px !important;
-    padding: 0 1.5px !important;
-    margin: 0 0.5px !important;
+    max-height: 22px !important;
+    padding: 0 3px !important;
+    margin: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
 }
@@ -47,20 +54,7 @@ var UrlAddonBar = {
     background: transparent !important;
 }
 
-#urlbar-icons > #addon-bar > #status-bar statusbarpanel:first-child {
-    padding-left: 0 !important;
-    margin-left: 0 !important;
-}
-#urlbar-icons > #addon-bar > #status-bar statusbarpanel:last-child {
-    padding-right: 0 !important;
-    margin-right: 0 !important;
-}
-
-#urlbar-icons > #addon-bar > #status-bar {
-    padding: 0 1.5px !important;
-    margin: 0 0.5px !important;
-}
-
+#urlbar-icons > #addon-bar #addonbar-closebutton,
 #urlbar-icons > #addon-bar toolbarspring,
 #urlbar-icons > #addon-bar toolbarspacer,
 #urlbar-icons > #addon-bar toolbarseparator {
