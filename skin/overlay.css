@@ -135,21 +135,32 @@
         border: 0 !important;
         padding: 1px !important;
     }
-    #urlbar-icons > .addon-bar .toolbarbutton-menubutton-button {
+    #urlbar-icons > .addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-button {
         padding: 0 1px !important;
     }
-    #urlbar-icons > .addon-bar .toolbarbutton-menubutton-button > .toolbarbutton-icon {
+    #urlbar-icons > .addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-button > .toolbarbutton-icon {
         border: 0 !important;
         padding: 1px !important;
     }
-    #urlbar-icons > .addon-bar .toolbarbutton-menubutton-dropmarker {
+    #urlbar-icons > .addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-dropmarker {
         margin: 0 !important;
         padding: 0 !important;
     }
-    #urlbar-icons > .addon-bar .toolbarbutton-menubutton-dropmarker > .dropmarker-icon {
+    #urlbar-icons > .addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-dropmarker::before {
+        display: none !important
+    }
+    #urlbar-icons > .addon-bar .toolbarbutton-1 > .toolbarbutton-menubutton-dropmarker > .dropmarker-icon {
         border: 0 !important;
-        padding: 1px !important;
         margin: 0 0 0 1px !important;
         min-height: 20px !important;
+        padding-top: 1px !important;
+        padding-bottom: 1px !important;
+    }
+    #urlbar-icons > .addon-bar .toolbarbutton-1 > .toolbarbutton-menu-dropmarker {
+        visibility: collapse !important;
+    }
+
+    #urlbar-icons > .addon-bar #bookmarks-menu-button > .toolbarbutton-menubutton-dropmarker > .dropmarker-icon {
+        padding: 1px !important;
     }
 }
