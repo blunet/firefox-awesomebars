@@ -4,11 +4,10 @@
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
     <Description about="urn:mozilla:install-manifest">
 
+        <em:name>awesome-bars</em:name>
         <em:id>awesomeBars@blunet.cc</em:id>
         <em:version>master</em:version>
         <em:type>2</em:type>
-        <em:name>awesome-bars</em:name>
-
         <em:targetApplication>
             <Description>
                 <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
@@ -18,6 +17,12 @@
         </em:targetApplication>
 
         <em:bootstrap>true</em:bootstrap>
+        <!--em:unpack>true</em:unpack-->
+        <!--em:iconURL>chrome://awesomebars/skin/common/icon48.png</em:iconURL-->
+        <!--em:icon64URL>chrome://awesomebars/skin/common/icon64.png</em:icon64URL-->
+        <!--em:optionsURL>chrome://awesomebars/content/options.xul</em:optionsURL-->
+        <!--em:optionsType>3</em:optionsType-->
+        <!--em:updateKey>MUAA4GNADCBiQKBgQD...6erD/H3XtsjvaB5+PJqbhj</em:updateKey-->
 
         <em:localized>
             <Description>
@@ -25,9 +30,10 @@
                 <em:name>awesome-bars</em:name>
                 <em:description>your toolbars on steroids!</em:description>
                 <em:creator>bernstein</em:creator>
-                <em:homepageURL>http://www.blunet.cc</em:homepageURL>
-                <em:developer>bernstein</em:developer>
+                <!--em:developer>bernstein</em:developer-->
+                <!--em:translator>bernstein</em:translator-->
                 <em:contributor>zbinlin</em:contributor>
+                <em:homepageURL>http://www.blunet.cc</em:homepageURL>
             </Description>
         </em:localized>
 
