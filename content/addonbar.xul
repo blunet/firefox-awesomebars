@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://classic_theme_restorer/content/overlay.css" type="text/css"?>
+<!DOCTYPE overlay [
+	<!ENTITY % overlayDTD SYSTEM "chrome://awesomebars/locale/addonbar.dtd">
+		%overlayDTD;
+]>
+<overlay id="classic_theme_restorer-overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+	<script type="application/x-javascript" src="overlay.js"/>
+
+	<!--### create new add-ons bar ###-->
+	<vbox id="browser-bottombox">
+		<toolbar id="ctr_addon-bar" customizable="true"
+				 class="toolbar-primary chromeclass-toolbar"
+				 mode="icons"
+				 iconsize="small"
+				 toolboxid="navigator-toolbox"
+				 insertafter="PersonalToolbar"
+				 context="toolbar-context-menu"
+				 toolbarname="&Ctr_addonbar;"
+				 lockiconsize="true"
+				 accesskey="N"
+				 key="key_toggleCtrAddonBar"
+				 defaultset="ctr_addonbar-close,spring,ctr_statusbar">
+		  <toolbarbutton id="ctr_addonbar-close" removable="false"
+				    oncommand="classicthemerestorerjs.ctr.toggleCtrAddonBar();"/>
+		  <toolbaritem id="ctr_statusbar"
+					   title="&Ctr_statusbar;"
+					   customizableui-areatype="toolbar"
+					   removable="true"/>
+		</toolbar>
+		<toolbar id="ctr_toolbar_dummy" customizable="false"
+				 hidden="true"
+				 insertafter="PersonalToolbar"
+				 defaultset="PanelUI-menu-button">
+		  <!-- ### move PanelUI-menu-button dummy here to prevent glitches with CTRs movable button -->
+          <toolbarbutton id="PanelUI-menu-button" removable="false" collapsed="true"/>
+		</toolbar>
+	</vbox>
+</overlay> 
