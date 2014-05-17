@@ -1,64 +1,56 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ * This Source Code is subject to the terms of the Mozilla Public License, v. 2.0.
+ * A copy of the MPL can be obtained at http://mozilla.org/MPL/2.0/.
+ */
+"use strict"
 
 const EXPORTED_SYMBOLS = ["OverlayManager"];
 
-Components.utils.import("resource://gre/modules/Services.jsm");
-Components.utils.import("resource://webapptabs/modules/LogManager.jsm");
-LogManager.createLogger(this, "OverlayManager");
+// imports
+this.console = Components.utils.import("resource://gre/modules/devtools/Console.jsm", {}).console;
+this.Services = Components.utils.import("resource://gre/modules/Services.jsm", {}).Services;
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Ce = Components.Exception;
-const Cr = Components.results;
-const Cm = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+const {classes: Cc, interfaces: Ci, utils: Cu, Exception: Ce} = Components;
 
-const XMLURI_PARSE_ERROR = "http://www.mozilla.org/newlayout/xml/parsererror.xml"
+// TODO move this to mozilla.jsm
+function createSandbox(principal, scriptUrl, prototype) {
 
-function createSandbox(aPrincipal, aScriptURL, aPrototype) {
-  let args = {
-    sandboxName: aScriptURL
-  };
-
-  if (aPrototype)
-    args.sandboxPrototype = aPrototype;
-
-  let sandbox = Components.utils.Sandbox(aPrincipal, args);
+  let sandbox = Components.utils.Sandbox(principal, {
+    sandboxName: scriptUrl,
+    sandboxPrototype: prototype || {}
+  });
 
   try {
-    Components.utils.evalInSandbox(
-      "Components.classes['@mozilla.org/moz/jssubscript-loader;1']" +
-                ".createInstance(Components.interfaces.mozIJSSubScriptLoader)" +
-                ".loadSubScript(" + JSON.stringify(aScriptURL) + ");",
-      sandbox, "ECMAv5");
+    Components.utils.evalInSandbox("Components.classes['@mozilla.org/moz/jssubscript-loader;1']" +
+                                   ".createInstance(Components.interfaces.mozIJSSubScriptLoader)" +
+                                   ".loadSubScript('" + scriptUrl + "',this,'UTF-8');", sandbox, "ECMAv5");
   }
   catch (e) {
-    WARN("Exception loading script " + aScriptURL, e);
+    console.warn("Exception loading script " + scriptUrl, e);
   }
-
-  return sandbox
+  return sandbox;
 }
 
+// public interface
 const OverlayManager = {
-  addOverlays: function(aOverlayList) {
-    OverlayManagerInternal.addOverlays(aOverlayList);
+  addOverlays: function(overlayMap) {
+    OverlayManagerInternal.addOverlays(overlayMap);
   },
 
-  addComponent: function(aCid, aComponentURL, aContract) {
-    OverlayManagerInternal.addComponent(aCid, aComponentURL, aContract);
+  addComponent: function(cId, componentUrl, contract) {
+    OverlayManagerInternal.addComponent(cId, componentUrl, contract);
   },
 
-  addCategory: function(aCategory, aEntry, aValue) {
-    OverlayManagerInternal.addCategory(aCategory, aEntry, aValue);
+  addCategory: function(category, entry, value) {
+    OverlayManagerInternal.addCategory(category, entry, value);
   },
 
-  addPreference: function(aName, aValue) {
-    OverlayManagerInternal.addPreference(aName, aValue);
+  addPreference: function(name, value) {
+    OverlayManagerInternal.addPreference(name, value);
   },
 
-  getScriptContext: function(aWindow, aScriptURL) {
-    return OverlayManagerInternal.getScriptContext(aWindow, aScriptURL);
+  getScriptContext: function(window, scriptUrl) {
+    return OverlayManagerInternal.getScriptContext(window, scriptUrl);
   },
 
   unload: function() {
@@ -66,181 +58,162 @@ const OverlayManager = {
   }
 };
 
+// private implementation
 const OverlayManagerInternal = {
-  windowEntryMap: new WeakMap(),
+  windowEntryMap: new WeakMap(), // do not prevent keys (window objects) from being garbage collected
   windowEntries: {},
-  overlays: {},
+  overlays: {}, // track overlays per windowUrl
   components: [],
   categories: [],
   contracts: [],
   preferences: [],
 
   init: function() {
-    LOG("init");
+    console.info("init()");
     Services.wm.addListener(this);
   },
 
   unload: function() {
-    LOG("unload");
+    console.info("unload() ",this.windowEntries);
+
     try {
       Services.wm.removeListener(this);
 
-      for (let windowURL in this.windowEntries) {
-        this.windowEntries[windowURL].forEach(function(aWindowEntry) {
-          this.destroyWindowEntry(aWindowEntry);
-        }, this);
-      }
+      // unload window entries
+      for (let windowUrl in this.windowEntries)
+        for (let windowEntry of this.windowEntries[windowUrl])
+          this.destroyWindowEntry(windowEntry);
 
-      let cm = Cc["@mozilla.org/categorymanager;1"].
-               getService(Ci.nsICategoryManager);
-      this.categories.forEach(function([aCategory, aEntry, aOldValue]) {
-        if (aOldValue)
-          cm.addCategoryEntry(aCategory, aEntry, aOldValue, false, true);
+      // unload categories
+      let cm = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
+      for (let [category, entry, oldValue] of this.categories)
+        if (oldValue)
+          cm.addCategoryEntry(category, entry, oldValue, false, true);
         else
-          cm.deleteCategoryEntry(aCategory, aEntry, false);
-      });
+          cm.deleteCategoryEntry(category, entry, false);
 
-      this.components.forEach(function(aCid) {
-        let factory = Cm.getClassObject(aCid, Ci.nsIFactory);
-        Cm.unregisterFactory(aCid, factory);
-      });
+      // unload components & contracts
+      let cr = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+      for (let cId of this.components)
+        cr.unregisterFactory(cId, cr.getClassObject(cId, Ci.nsIFactory));
+      // Restore an overridden contract ID 
+      for (let [contract, cId] of this.contracts)
+        cr.registerFactory(cId, null, contract, null);
 
-      this.contracts.forEach(function([aContract, aCid]) {
-        Cm.registerFactory(aCid, null, aContract, null);
-      });
-
-      this.preferences.forEach(function([aName, aType, aValue]) {
-        if (aValue === null)
-          Services.prefs.clearUserPref(aName);
+      // unload preferences
+      for (let [name, type, value] of this.preferences)
+        if (value === null)
+          Services.prefs.clearUserPref(name);
         else
-          Services.prefs["set" + aType](aName, aValue);
-      });
+          // Restore an overridden pref
+          Services.prefs["set" + type](name, value);
     }
     catch (e) {
-      ERROR("Exception during unload", e);
+      console.error("Exception during unload", e);
     }
   },
 
-  createWindowEntry: function(aDOMWindow, aOverlays) {
-    aDOMWindow.addEventListener("unload", this, false);
+  createWindowEntry: function(domWindow, overlays) {
+    console.info("createWindowEntry(",domWindow,overlays,")");
 
-    let windowURL = aDOMWindow.location.toString();
-    LOG("Creating window entry for " + windowURL);
-    if (this.windowEntryMap.has(aDOMWindow))
-      throw new Ce("Already registered window entry for " + windowURL);
+    domWindow.addEventListener("unload", this, false);
 
-    if (!(windowURL in this.windowEntries))
-      this.windowEntries[windowURL] = [];
+    let newEntry = {window: domWindow, scripts: {}, nodes: []};
+    let windowUrl = domWindow.location.toString();
 
-    let newEntry = {
-      window: aDOMWindow,
-      scripts: {},
-      nodes: [],
-    };
+    if (this.windowEntryMap.has(domWindow))
+      throw new Ce("Already registered window entry for " + windowUrl);
+    this.windowEntryMap.set(domWindow, newEntry);
 
-    this.windowEntries[windowURL].push(newEntry);
-    this.windowEntryMap.set(aDOMWindow, newEntry);
+    if (!(windowUrl in this.windowEntries))
+      this.windowEntries[windowUrl] = [];
+    this.windowEntries[windowUrl].push(newEntry);
 
-    this.applyWindowEntryOverlays(newEntry, aOverlays);
-    return newEntry
+    this.applyWindowEntryOverlays(newEntry, overlays);
+    return newEntry;
   },
 
-  destroyWindowEntry: function(aWindowEntry) {
-    aWindowEntry.window.removeEventListener("unload", this, false);
+  destroyWindowEntry: function(windowEntry) {
+    console.info("destroyWindowEntry(",windowEntry,")");
 
-    let windowURL = aWindowEntry.window.location.toString();
-    LOG("Destroying window entry for " + windowURL);
+    windowEntry.window.removeEventListener("unload", this, false);
 
-    this.windowEntryMap.delete(aWindowEntry.window);
-
-    for (let [,sandbox] in Iterator(aWindowEntry.scripts)) {
+    // unloadScriptOverlays
+    for (let [,sandbox] in Iterator(windowEntry.scripts)) {
       try {
         if ("OverlayListener" in sandbox && "unload" in sandbox.OverlayListener)
           sandbox.OverlayListener.unload();
       }
       catch (e) {
-        ERROR("Exception calling script unload listener", e);
+        console.error("Exception calling script unload listener", e);
       }
+      Components.utils.nukeSandbox(sandbox);
     }
-    aWindowEntry.scripts = {};
 
-    aWindowEntry.nodes.forEach(function(aNode) {
-      aNode.parentNode.removeChild(aNode);
-    }, this);
-    aWindowEntry.nodes = [];
+    // unloadDocumentAndStyleOverlays
+    for (let node of windowEntry.nodes)
+      node.parentNode.removeChild(node);
 
-    if (!(windowURL in this.windowEntries))
-      throw new Ce("Missing window entry for " + windowURL);
-    let pos = this.windowEntries[windowURL].indexOf(aWindowEntry);
-    if (pos == -1)
-      throw new Ce("Missing window entry for " + windowURL);
+    // remove windowEntry
+    this.windowEntryMap.delete(windowEntry.window);
 
-    this.windowEntries[windowURL].splice(pos, 1);
-    if (this.windowEntries[windowURL].length == 0)
-      delete this.windowEntries[windowURL];
+    // TODO in theory we shouldn't leak. do we ?
   },
 
-  applyWindowEntryOverlays: function(aWindowEntry, aOverlays) {
-    if ("documents" in aOverlays) {
-      aOverlays.documents.forEach(function(aDocumentURL) {
-        this.loadDocumentOverlay(aWindowEntry, aDocumentURL);
-      }, this);
-    }
+  applyWindowEntryOverlays: function(windowEntry, overlays) {
+    console.info("applyWindowEntryOverlays(",windowEntry,overlays,")");
 
-    if ("styles" in aOverlays) {
-      aOverlays.styles.forEach(function(aStyleURL) {
-        this.loadStyleOverlay(aWindowEntry, aStyleURL);
-      }, this);
-    }
+    if ("documents" in overlays)
+      for (let documentUrl of overlays.documents)
+        this.loadDocumentOverlay(windowEntry, documentUrl);
 
-    if ("scripts" in aOverlays) {
-      aOverlays.scripts.forEach(function(aScriptURL) {
-        this.loadScriptOverlay(aWindowEntry, aScriptURL);
-      }, this);
-    }
+    if ("styles" in overlays)
+      for (let styleUrl of overlays.styles)
+        this.loadStyleOverlay(windowEntry, styleUrl);
+
+    if ("scripts" in overlays)
+      for (let scriptUrl of overlays.scripts)
+        this.loadScriptOverlay(windowEntry, scriptUrl);
   },
 
-  loadDocumentOverlay: function(aWindowEntry, aDocumentURL) {
-    LOG("Loading document overlay " + aDocumentURL);
+  loadDocumentOverlay: function(windowEntry, documentUrl) {
+    console.info("loadDocumentOverlay(",windowEntry,documentUrl,")");
 
-    // TODO make this async
-    let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].
-              createInstance(Ci.nsIXMLHttpRequest);
-    xhr.open("GET", aDocumentURL, false);
+    // TODO make this async (beware or overlay-scripts may execute before!)
+    let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Ci.nsIXMLHttpRequest);
+    xhr.open("GET", documentUrl, false);
     xhr.send();
 
     let overlayDoc = xhr.responseXML;
-    if (overlayDoc.documentElement.namespaceURI == XMLURI_PARSE_ERROR)
+    if (overlayDoc.documentElement.namespaceURI == "http://www.mozilla.org/newlayout/xml/parsererror.xml")
       return;
 
-    let targetDoc = aWindowEntry.window.document;
+    let targetDoc = windowEntry.window.document;
 
-    function walkDocumentNodes(aDocument) {
-      let node = aDocument.documentElement;
+    function walkDocumentNodes(document) {
+      let node = document.documentElement;
 
       while (node) {
         let currentNode = node;
 
-        // If possible to descend then do so
-        if (node.firstChild) {
+        if (node.firstChild)
+          // If possible to descend then do so
           node = node.firstChild;
-        }
         else {
           // Otherwise find the next node in the document by walking up the tree
           // until there is a nextSibling (or we hit the documentElement)
           while (!node.nextSibling && node.parentNode != overlayDoc.documentElement)
             node = node.parentNode;
 
-          // Select the nextSibling (or null if we hit the top)
-          node = node.nextSibling;
+          node = node.nextSibling; // or null if we hit the top
         }
 
         yield currentNode;
       }
     }
 
-    function elementChildren(aElement) {
-      let node = aElement.firstChild;
+    function elementChildren(element) {
+      let node = element.firstChild;
       while (node) {
         let currentNode = node;
 
@@ -251,11 +224,10 @@ const OverlayManagerInternal = {
       }
     }
 
-    for (let node in walkDocumentNodes(overlayDoc)) {
-      // Remove the node if it is an empty text node
+    // Remove all empty text nodes from overlay
+    for (let node in walkDocumentNodes(overlayDoc))
       if (node.nodeType == Ci.nsIDOMNode.TEXT_NODE && node.nodeValue.trim() == "")
         node.parentNode.removeChild(node);
-    }
 
     for (let containerElement in elementChildren(overlayDoc.documentElement)) {
       if (!containerElement.id)
@@ -286,218 +258,177 @@ const OverlayManagerInternal = {
           }
         }
 
+        // TODO can not insert after last chlid...
         targetElement.insertBefore(newElement, insertBefore);
-        aWindowEntry.nodes.push(newElement);
+        windowEntry.nodes.push(newElement);
       }
     }
   },
 
-  loadStyleOverlay: function(aWindowEntry, aStyleURL) {
-    LOG("Loading style overlay " + aStyleURL);
+  loadStyleOverlay: function(windowEntry, styleUrl) {
+    console.info("loadStyleOverlay(",windowEntry,styleUrl,")");
 
-    let doc = aWindowEntry.window.document;
-    let styleNode = doc.createProcessingInstruction("xml-stylesheet",
-                                                    "href=\"" + aStyleURL + "\" " +
-                                                    "type=\"text/css\"");
+    let doc = windowEntry.window.document;
+    let styleNode = doc.createProcessingInstruction("xml-stylesheet", "href=\"" + styleUrl + "\" type=\"text/css\"");
     doc.insertBefore(styleNode, doc.documentElement);
 
-    aWindowEntry.nodes.push(styleNode);
+    windowEntry.nodes.push(styleNode);
   },
 
-  loadScriptOverlay: function(aWindowEntry, aScriptURL) {
-    LOG("Loading script overlay " + aScriptURL);
+  loadScriptOverlay: function(windowEntry, scriptUrl) {
+    console.info("loadScriptOverlay(",windowEntry,scriptUrl,")");
 
-    let sandbox = createSandbox(aWindowEntry.window, aScriptURL, aWindowEntry.window);
-    aWindowEntry.scripts[aScriptURL] = sandbox;
+    let sandbox = createSandbox(windowEntry.window, scriptUrl, windowEntry.window);
+    windowEntry.scripts[scriptUrl] = sandbox;
 
     if ("OverlayListener" in sandbox && "load" in sandbox.OverlayListener) {
       try {
         sandbox.OverlayListener.load();
       }
       catch (e) {
-        WARN("Exception calling script load event " + aScriptURL, e);
+        console.warn("Exception calling script load event " + scriptUrl, e);
       }
     }
   },
 
-  addOverlays: function(aOverlayList) {
+  addOverlays: function(overlayMap) {
+    console.info("addOverlays(",overlayMap,")");
+
     try {
-      // First check over the new overlays, merge them into the master list
-      // and if any are for already tracked windows apply them
-      for (let [windowURL, newOverlays] in Iterator(aOverlayList)) {
-        let newOverlays = aOverlayList[windowURL];
+      for (let windowUrl in overlayMap) {
+        let overlays = overlayMap[windowUrl];
 
-        if (!(windowURL in this.overlays))
-          this.overlays[windowURL] = {};
-        let existingOverlays = this.overlays[windowURL];
+        // Add new overlays into known overlays
+        if (!(windowUrl in this.overlays))
+          this.overlays[windowUrl] = {};
 
-        ["documents", "styles", "scripts"].forEach(function(aType) {
-          if (!(aType in newOverlays))
-            return;
+        for (let type of ["documents", "styles", "scripts"])
+          if (type in overlays) {
+            if (!(type in this.overlays[windowUrl]))
+              this.overlays[windowUrl][type] = overlays[type].slice(0);
+            else
+              this.overlays[windowUrl][type].push(overlays[type]);
+          }
 
-          if (!(aType in existingOverlays))
-            existingOverlays[aType] = newOverlays[aType].slice(0);
-          else
-            existingOverlays[aType].push(newOverlays[aType]);
-        }, this);
-
-        // Apply the new overlays to any already tracked windows
-        if (windowURL in this.windowEntries) {
-          this.windowEntries[windowURL].forEach(function(aWindowEntry) {
-            this.applyWindowEntryOverlays(aWindowEntry, newOverlays);
-          }, this);
-        }
+        // Apply new overlays to any already tracked windows
+        if (windowUrl in this.windowEntries)
+          for(let windowEntry in this.windowEntries[windowUrl])
+            this.applyWindowEntryOverlays(windowEntry, overlays);
       }
 
-      // Search over existing windows to see if any need to be tracked now
+      // Search over existing windows, add new overlays & track as needed
       let windows = Services.wm.getEnumerator(null);
       while (windows.hasMoreElements()) {
         let domWindow = windows.getNext().QueryInterface(Ci.nsIDOMWindow);
-        let windowURL = domWindow.location.toString();
+        let windowUrl = domWindow.location.toString();
 
-        // If we are adding overlays for this window and not already tracking
-        // this window then start to track it and add the new overlays
-        if ((windowURL in aOverlayList) && !(windowURL in this.windowEntries)) {
-          let windowEntry = this.createWindowEntry(domWindow, aOverlayList[windowURL]);
-        }
+        if ((windowUrl in overlayMap) && !this.windowEntryMap.has(domWindow))
+          this.createWindowEntry(domWindow, overlayMap[windowUrl]);
       }
     }
     catch (e) {
-      ERROR("Exception adding overlay list", e);
+      console.error("Exception adding overlay list", e);
     }
   },
 
-  addComponent: function(aCid, aComponentURL, aContract) {
-    if (aContract) {
+  addComponent: function(cId, componentUrl, contract) {
+    let cr = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+    if (contract)
       try {
-        let cid = Cm.contractIDToCID(aContract);
-        // It's possible to have a contract to CID mapping when the CID doesn't
-        // exist
-        if (Cm.isCIDRegistered(cid))
-          this.contracts.push([aContract, cid]);
+        // It's possible to have a contract to CID mapping when the CID doesn't exist
+        let ccid = cr.contractIDToCID(contract);
+        if (cr.isCIDRegistered(ccid))
+          // Allows reverting an overridden contract ID 
+          this.contracts.push([contract, ccid]);
       }
-      catch (e) {
-      }
-    }
+      catch (e) { }
 
-    aCid = Components.ID(aCid);
-    Cm.registerFactory(aCid, null, aContract, {
+    cId = Components.ID(cId);
+    cr.registerFactory(cId, null, contract, {
       _sandbox: null,
 
-      createInstance: function(aOuter, aIID) {
-        if (!this._sandbox) {
-          let principal = Cc["@mozilla.org/systemprincipal;1"].
-                          createInstance(Ci.nsIPrincipal);
-          this._sandbox = createSandbox(principal, aComponentURL);
-        }
-
-        if (!("NSGetFactory" in this._sandbox)) {
-          ERROR("Component " + aComponentURL + " is missing NSGetFactory");
-          throw Cr.NS_ERROR_FACTORY_NOT_REGISTERED;
-        }
-
+      createInstance: function(outer, iId) {
         try {
-          return this._sandbox.NSGetFactory(aCid).createInstance(aOuter, aIID);
+          if (!this._sandbox) {
+            let principal = Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal);
+            this._sandbox = createSandbox(principal, componentUrl);
+          }
+          return this._sandbox.NSGetFactory(cId).createInstance(outer, iId);
         }
         catch (e) {
-          ERROR("Exception initialising component " + aContract + " from " + aComponentURL, e);
+          console.error("Exception initialising component",contract,"from",componentUrl,e);
           throw e;
         }
       }
     });
-
-    this.components.push(aCid);
+    this.components.push(cId);
   },
 
-  addCategory: function(aCategory, aEntry, aValue) {
-    let cm = Cc["@mozilla.org/categorymanager;1"].
-             getService(Ci.nsICategoryManager);
+  addCategory: function(category, entry, value) {
+    let cm = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
     let oldValue = null;
     try {
-      oldValue = cm.getCategoryEntry(aCategory, aEntry);
+      oldValue = cm.getCategoryEntry(category, entry);
     }
     catch (e) { }
-    cm.addCategoryEntry(aCategory, aEntry, aValue, false, true);
-    this.categories.push([aCategory, aEntry, oldValue]);
+    cm.addCategoryEntry(category, entry, value, false, true);
+    this.categories.push([category, entry, oldValue]);
   },
 
-  addPreference: function(aName, aValue) {
+  // TODO we need defaultPrefs!
+  
+  // Allows overriding preferences of app & other extensions
+  addPreference: function(name, value) {
     let oldValue = null;
+    let type = typeof value;
+    type = (type == "number") ? "IntPref" : (type == "boolean") ? "BoolPref" : "CharPref";
 
-    let type = "CharPref";
-    switch (typeof aValue) {
-    case "number":
-      type = "IntPref";
-      break;
-    case "boolean":
-      type = "BoolPref";
-      break;
-    }
+    if (Services.prefs.getPrefType(name) != Ci.nsIPrefBranch.PREF_INVALID)
+      oldValue = Services.prefs["get" + type](name);
 
-    if (Services.prefs.getPrefType(aName) != Ci.nsIPrefBranch.PREF_INVALID)
-      oldValue = Services.prefs["get" + type](aName);
-
-    Services.prefs["set" + type](aName, aValue);
-    this.preferences.push([aName, type, oldValue]);
+    Services.prefs["set" + type](name, value);
+    this.preferences.push([name, type, oldValue]);
   },
 
-  getScriptContext: function(aDOMWindow, aScriptURL) {
-    if (!this.windowEntryMap.has(aDOMWindow))
-      return null;
-    let windowEntry = this.windowEntryMap.get(aDOMWindow);
-    if (!(aScriptURL in windowEntry.scripts))
-      return null;
-    return windowEntry.scripts[aScriptURL];
+  getScriptContext: function(domWindow, scriptUrl) {
+    let windowEntry = this.windowEntryMap.get(domWindow);
+    if (windowEntry && scriptUrl in windowEntry.scripts)
+      return windowEntry.scripts[scriptUrl];
+    return null;
   },
 
-  // nsIEventListener implementation
-  handleEvent: function(aEvent) {
+  // - nsIEventListener implementation
+
+  handleEvent: function(event) {
     try {
-      let domWindow = aEvent.currentTarget;
+      let domWindow = event.currentTarget;
+      let windowUrl = domWindow.location.toString();
 
-      switch (aEvent.type) {
-      case "load":
+      if (event.type === "load") {
         domWindow.removeEventListener("load", this, false);
-        let windowURL = domWindow.location.toString();
-        // Track this window if there are overlays for it
-        if (windowURL in this.overlays) {
-          let tm = Cc["@mozilla.org/thread-manager;1"].
-                   getService(Ci.nsIThreadManager);
 
-          let overlays = this.overlays[windowURL];
-
-          // Defer adding overlays until immediately after the load events fire
-          tm.mainThread.dispatch({
-            run: function() {
-              OverlayManagerInternal.createWindowEntry(domWindow, overlays);
-            }
-          }, Ci.nsIThread.DISPATCH_NORMAL);
-        }
-        break;
-      case "unload":
-        if (!this.windowEntryMap.has(domWindow)) {
-          ERROR("Saw unload event for unknown window " + domWindow.location);
-          return;
-        }
+        // NOTE removed deferred loading (see 2ea67167116d145dbe982dc0ea71a2be25d48a5c)
+        if (windowUrl in this.overlays)
+          this.createWindowEntry(domWindow, this.overlays[windowUrl]);
+      }
+      else if (event.type === "unload") {
         let windowEntry = this.windowEntryMap.get(domWindow);
-        OverlayManagerInternal.destroyWindowEntry(windowEntry);
-        break;
+        this.destroyWindowEntry(windowEntry);
+
+        let entries = this.windowEntries[windowUrl];
+        entries.splice(entries.indexOf(windowEntry), 1);
       }
     }
     catch (e) {
-      ERROR("Error during window " + aEvent.type, e);
+      console.error("Error during window ", event.type, e);
     }
   },
 
-  // nsIWindowMediatorListener implementation
-  onOpenWindow: function(aXULWindow) {
-    let domWindow = aXULWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                              .getInterface(Ci.nsIDOMWindow);
+  // - nsIWindowMediatorListener implementation
 
-    // We can't get the window's URL until it is loaded
-    domWindow.addEventListener("load", this, false);
+  onOpenWindow: function(xulWindow) {
+    xulWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow).addEventListener("load", this, false);
   },
-
   onWindowTitleChange: function() { },
   onCloseWindow: function() { },
 };
